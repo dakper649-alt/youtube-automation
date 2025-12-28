@@ -1,8 +1,45 @@
-.DS_Store
+# Environment variables
 .env
+
+# OS files
+.DS_Store
+
+# Dependencies
 node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+.venv/
+
+# Logs
 *.log
+
+# Build directories
 dist/
 build/
+
+# Generated video files
+projects/
 *.mp4
 *.mp3
+*.wav
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+.cache/
