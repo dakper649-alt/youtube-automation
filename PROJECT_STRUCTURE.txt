@@ -1,0 +1,115 @@
+youtube-automation/
+│
+├── 📚 ДОКУМЕНТАЦИЯ
+│   ├── README_QUICKSTART.md          ⚡ Быстрый старт (30 сек)
+│   ├── AUTOMATION_GUIDE.md           📖 Полное руководство
+│   ├── CREATED_FILES_SUMMARY.md      📦 Сводка созданных файлов
+│   └── PROJECT_STRUCTURE.txt         📂 Эта структура
+│
+├── ⚙️ НАСТРОЙКА
+│   ├── .env                          🔑 API ключи (создайте!)
+│   ├── .keys_secure.json             🔒 Опциональные ключи
+│   └── requirements.txt              📦 Зависимости
+│
+└── backend/
+    │
+    ├── 🎯 ГЛАВНЫЕ КОМПОНЕНТЫ
+    │   ├── main_orchestrator.py      🎬 Главный оркестратор (461 строк)
+    │   │   └── YouTubeAutomationOrchestrator
+    │   │       ├── create_video_pipeline()  - Полный пайплайн
+    │   │       ├── analyze_niche()          - Анализ ниши
+    │   │       ├── show_stats()             - Статистика API
+    │   │       └── save/load_project()      - Управление проектами
+    │   │
+    │   └── services/
+    │       ├── content_analyzer.py   🔍 Анализатор контента (613 строк)
+    │       │   └── ContentAnalyzer
+    │       │       ├── find_best_video_ideas()    - Поиск идей
+    │       │       ├── _calculate_performance()   - Performance score
+    │       │       ├── _extract_patterns()        - Паттерны контента
+    │       │       ├── _rank_by_viral_potential() - Вирусный потенциал
+    │       │       └── analyze_seasonal_trends()  - Сезонные тренды
+    │       │
+    │       ├── script_gen.py         📝 Генератор скриптов (680 строк)
+    │       │   └── ScriptGenerator
+    │       │       ├── generate_script()          - Генерация скрипта
+    │       │       ├── generate_image_prompts()   - Промпты для изображений
+    │       │       ├── translate_script()         - Перевод скриптов
+    │       │       └── optimize_for_seo()         - SEO оптимизация
+    │       │
+    │       ├── analyzer.py           📊 YouTube анализатор (605 строк)
+    │       │   └── YouTubeAnalyzer
+    │       │       ├── get_channel_info()         - Инфо о канале
+    │       │       ├── get_recent_videos()        - Последние видео
+    │       │       ├── analyze_video_performance()- Метрики видео
+    │       │       └── find_similar_channels()    - Похожие каналы
+    │       │
+    │       ├── analyzer_advanced.py  📈 Расширенный анализатор (655 строк)
+    │       │   └── YouTubeAnalyzerAdvanced
+    │       │       ├── calculate_performance_score() - Score видео
+    │       │       ├── rank_videos_by_performance()  - Ранжирование
+    │       │       ├── find_underserved_niches()     - Низкоконкурентные ниши
+    │       │       └── analyze_content_style_detailed() - Детальный стиль
+    │       │
+    │       └── api_key_manager.py    🔑 Управление ключами (249 строк)
+    │           └── APIKeyManager
+    │               ├── get_gemini_key()    - Gemini ключ
+    │               ├── get_youtube_key()   - YouTube ключ
+    │               ├── get_hf_key()        - Hugging Face ключ
+    │               └── get_stats()         - Статистика
+    │
+    ├── 🧪 ТЕСТЫ И ПРИМЕРЫ
+    │   ├── test_full_system.py       ✅ Полное тестирование (263 строки)
+    │   │   ├── test_niche_analysis()      - Тест анализа ниши
+    │   │   ├── test_video_creation()      - Тест создания видео
+    │   │   └── test_api_key_rotation()    - Тест ротации ключей
+    │   │
+    │   └── example_usage.py          💡 Примеры использования (324 строки)
+    │       ├── example_1_quick_video()    - Быстрое создание видео
+    │       ├── example_2_analyze_first()  - Анализ → Создание
+    │       ├── example_3_batch_creation() - Пакетное создание
+    │       ├── example_4_components()     - Работа с компонентами
+    │       └── example_5_custom_settings()- Кастомные настройки
+    │
+    └── 🗄️ ДРУГИЕ СЕРВИСЫ
+        ├── utils/
+        │   ├── cache.py              💾 Кэширование
+        │   ├── language_detector.py  🌍 Определение языка
+        │   └── api_costs.py          💰 Стоимость API
+        │
+        └── services/
+            ├── image_gen.py          🎨 Генерация изображений (TODO)
+            ├── tts.py                🎤 Text-to-Speech (TODO)
+            ├── video_editor.py       🎬 Монтаж видео (TODO)
+            └── subtitle_gen.py       📝 Генерация субтитров (TODO)
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 СТАТИСТИКА:
+   • Основной код:     1661 строк
+   • Документация:     3 файла (GUIDE + QUICKSTART + SUMMARY)
+   • Примеры:          5 сценариев использования
+   • Тесты:            3 полных теста
+   • Компоненты:       24 функции/метода
+
+🎯 ВОЗМОЖНОСТИ:
+   ✅ Поиск идей для видео (анализ конкурентов + AI генерация)
+   ✅ Генерация скриптов (Hook + Основа + CTA + Заголовки)
+   ✅ Промпты для изображений (автоматически из скрипта)
+   ✅ Управление API ключами (ротация + статистика)
+   ✅ Анализ ниши (тренды + рекомендации)
+   🔜 Генерация изображений (TODO)
+   🔜 Создание озвучки (TODO)
+   🔜 Монтаж видео (TODO)
+
+🚀 БЫСТРЫЙ СТАРТ:
+   1. Создайте .env с API ключами
+   2. cd backend && python test_full_system.py
+   3. python example_usage.py
+
+📖 ДОКУМЕНТАЦИЯ:
+   • README_QUICKSTART.md - Начните здесь!
+   • AUTOMATION_GUIDE.md  - Полное руководство
+   • example_usage.py     - Готовые примеры
+
+═══════════════════════════════════════════════════════════════════════
