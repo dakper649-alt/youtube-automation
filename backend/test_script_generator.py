@@ -32,25 +32,72 @@ async def test_script_generation():
 
     print_section("ТЕСТ 1: Генерация скрипта для YouTube видео")
 
-    # API ключ из переменных окружения
+    # API ключи из переменных окружения
     load_dotenv()
-    api_key = os.getenv('OPENROUTER_API_KEY')
 
-    if not api_key or api_key == 'your_openrouter_api_key_here':
-        print("\n❌ ОШИБКА: OPENROUTER_API_KEY не найден в .env файле")
-        print("\n💡 Добавьте в .env:")
-        print("   OPENROUTER_API_KEY=sk-or-v1-...")
-        print("\n🌐 Получите бесплатный ключ: https://openrouter.ai/keys")
-        return
+    # Приоритет 1: Google Gemini (БЕСПЛАТНО навсегда!)
+    gemini_key = os.getenv('GOOGLE_API_KEY')
+
+    # Приоритет 2: Grok (X.AI)
+    grok_key = os.getenv('GROK_API_KEY')
+
+    # Выбираем провайдер
+    api_key = None
+    provider = None
+    model_name = None
+
+    if gemini_key and gemini_key != 'your_google_api_key_here':
+        api_key = gemini_key
+        provider = "gemini"
+        model_name = "gemini-1.5-flash"
+        print("✅ Используем Google Gemini API (БЕСПЛАТНО навсегда!)")
+        print("   🌐 Сайт: https://aistudio.google.com/")
+
+    elif grok_key and grok_key != 'your_grok_api_key_here':
+        api_key = grok_key
+        provider = "grok"
+        model_name = "grok-beta"
+        print("✅ Используем Grok API (X.AI)")
+        print("   🌐 Сайт: https://x.ai/")
+
+    else:
+        # Пробуем найти рабочий ключ Grok автоматически
+        print("⚠️  Ни один API ключ не настроен в .env")
+        print("🔍 Ищу рабочий ключ Grok среди предустановленных...")
+
+        # Импортируем модуль проверки ключей
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+        from backend.utils.test_api_keys import find_working_grok_key
+
+        grok_key = await find_working_grok_key()
+
+        if grok_key:
+            api_key = grok_key
+            provider = "grok"
+            model_name = "grok-beta"
+            print("\n✅ Найден рабочий ключ Grok!")
+        else:
+            print("\n❌ ОШИБКА: Не найдено рабочих API ключей!")
+            print("\n💡 Настройте API ключ в .env файле:")
+            print("   GOOGLE_API_KEY=your_key_here  (рекомендуется - бесплатно)")
+            print("   или")
+            print("   GROK_API_KEY=your_key_here")
+            print("\n🌐 Получите ключ:")
+            print("   Google Gemini: https://aistudio.google.com/")
+            print("   Grok (X.AI): https://x.ai/")
+            return
 
     try:
         # Инициализация генератора
-        print("\n🚀 Инициализация ScriptGenerator...")
-        model = "google/gemini-flash-1.5"
-        generator = ScriptGenerator(api_key, model=model)
+        print(f"\n🚀 Инициализация ScriptGenerator...")
+        generator = ScriptGenerator(api_key, provider=provider)
         print(f"✅ Генератор инициализирован успешно")
-        print(f"   🤖 Модель: {model}")
-        print(f"   💰 Стоимость: БЕСПЛАТНО!")
+        print(f"   🤖 Провайдер: {provider.upper()}")
+        print(f"   📦 Модель: {model_name}")
+        if provider == "gemini":
+            print(f"   💰 Стоимость: БЕСПЛАТНО навсегда!")
+        else:
+            print(f"   💰 Стоимость: Зависит от лимитов X.AI")
 
         # Генерация скрипта
         print("\n📝 Генерация скрипта...")

@@ -11,12 +11,13 @@
 - Генерация промптов для изображений
 - Перевод скриптов на другие языки
 
-API:
-- OpenRouter API (доступ к Claude, GPT, Gemini и другим моделям)
-- Поддержка бесплатных моделей (google/gemini-flash-1.5)
+Поддерживаемые провайдеры:
+- Google Gemini (основной, бесплатный) - gemini-1.5-flash
+- Grok (X.AI, запасной) - grok-beta
 """
 
-import openai  # OpenRouter использует OpenAI-совместимый API
+import google.generativeai as genai
+import openai
 import asyncio
 import json
 import re
@@ -35,43 +36,61 @@ class InvalidAPIKeyError(ScriptGeneratorError):
 
 
 class ScriptGenerator:
-    """Класс для генерации скриптов видео с интеграцией OpenRouter API"""
+    """Класс для генерации скриптов видео с поддержкой Google Gemini и Grok"""
 
-    def __init__(self, openrouter_api_key: str, model: str = "google/gemini-flash-1.5"):
+    def __init__(
+        self,
+        api_key: str,
+        provider: str = "gemini",
+        model: Optional[str] = None
+    ):
         """
-        Инициализация генератора скриптов с OpenRouter
+        Инициализация генератора скриптов
 
         Args:
-            openrouter_api_key: API ключ OpenRouter
-            model: Модель для использования (по умолчанию google/gemini-flash-1.5)
+            api_key: API ключ
+            provider: "gemini" (по умолчанию) или "grok"
+            model: Модель (опционально, выбирается автоматически)
 
-            Доступные бесплатные модели:
-            - "google/gemini-flash-1.5" (РЕКОМЕНДУЕТСЯ! Быстрая и бесплатная)
-            - "meta-llama/llama-3.1-8b-instruct:free"
-            - "mistralai/mistral-7b-instruct:free"
+        Провайдеры:
+            Google Gemini (основной):
+            - Бесплатная модель: "gemini-1.5-flash"
+            - Быстрая и качественная генерация
 
-            Платные дешёвые модели:
-            - "anthropic/claude-3-5-haiku-20241022" ($0.25/1M токенов)
-            - "openai/gpt-3.5-turbo" ($0.50/1M токенов)
+            Grok (X.AI, запасной):
+            - Модель: "grok-beta"
+            - OpenAI-совместимый API
 
         Raises:
             InvalidAPIKeyError: Если API ключ невалиден
         """
-        if not openrouter_api_key or openrouter_api_key == "your_openrouter_api_key_here":
-            raise InvalidAPIKeyError("Необходимо предоставить валидный OpenRouter API ключ")
+        if not api_key or api_key in ["your_api_key_here", "your_openrouter_api_key_here"]:
+            raise InvalidAPIKeyError("Необходимо предоставить валидный API ключ")
+
+        self.provider = provider.lower()
+
+        if self.provider not in ["gemini", "grok"]:
+            raise InvalidAPIKeyError(f"Неподдерживаемый провайдер: {provider}. Используйте 'gemini' или 'grok'")
 
         try:
-            self.api_key = openrouter_api_key
-            self.model = model
-            self.base_url = "https://openrouter.ai/api/v1"
+            if self.provider == "gemini":
+                # Google Gemini
+                self.model = model or "gemini-1.5-flash"
+                genai.configure(api_key=api_key)
+                self.client = genai.GenerativeModel(self.model)
 
-            # Используем OpenAI-совместимый клиент для OpenRouter
-            self.client = openai.OpenAI(
-                api_key=self.api_key,
-                base_url=self.base_url
-            )
+            elif self.provider == "grok":
+                # Grok (X.AI)
+                self.model = model or "grok-beta"
+                self.api_key = api_key
+                self.base_url = "https://api.x.ai/v1"
+                self.client = openai.OpenAI(
+                    api_key=self.api_key,
+                    base_url=self.base_url
+                )
+
         except Exception as e:
-            raise InvalidAPIKeyError(f"Ошибка инициализации OpenRouter API: {str(e)}")
+            raise InvalidAPIKeyError(f"Ошибка инициализации {self.provider.upper()} API: {str(e)}")
 
     async def generate_script(
         self,
@@ -108,31 +127,31 @@ class ScriptGenerator:
             # Строим промпт
             prompt = self._build_script_prompt(topic, target_length, style, tone, language)
 
-            # Вызываем OpenRouter API (OpenAI-совместимый формат)
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                max_tokens=4096,
-                temperature=0.7
-            )
+            # Вызываем API в зависимости от провайдера
+            if self.provider == "gemini":
+                response = self.client.generate_content(prompt)
+                script_text = response.text
+            elif self.provider == "grok":
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    max_tokens=4096,
+                    temperature=0.7
+                )
+                script_text = response.choices[0].message.content
 
             # Парсим ответ
-            script_text = response.choices[0].message.content
-
-            # Извлекаем метаданные
             result = self._parse_script_response(script_text, topic)
 
             return result
 
-        except openai.APIError as e:
-            raise ScriptGeneratorError(f"Ошибка OpenRouter API: {str(e)}")
         except Exception as e:
-            raise ScriptGeneratorError(f"Неожиданная ошибка при генерации скрипта: {str(e)}")
+            raise ScriptGeneratorError(f"Ошибка {self.provider.upper()} API: {str(e)}")
 
     def _build_script_prompt(
         self,
@@ -408,7 +427,7 @@ class ScriptGenerator:
         base_template = STYLE_TEMPLATES.get(style, STYLE_TEMPLATES["minimalist_stick_figure"])
 
         try:
-            # Используем Claude чтобы описать сцену
+            # Используем AI чтобы описать сцену
             scene_prompt = f"""
 Опиши визуальную сцену для иллюстрации этого текста в 1-2 предложениях.
 
@@ -430,14 +449,18 @@ class ScriptGenerator:
 Твой ответ:
 """
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": scene_prompt}],
-                max_tokens=150,
-                temperature=0.5
-            )
-
-            scene_description = response.choices[0].message.content.strip()
+            # Вызываем API в зависимости от провайдера
+            if self.provider == "gemini":
+                response = self.client.generate_content(scene_prompt)
+                scene_description = response.text.strip()
+            elif self.provider == "grok":
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": scene_prompt}],
+                    max_tokens=150,
+                    temperature=0.5
+                )
+                scene_description = response.choices[0].message.content.strip()
 
             # Формируем финальный промпт
             final_prompt = base_template.format(scene=scene_description)
@@ -520,14 +543,18 @@ class ScriptGenerator:
 ПЕРЕВЕДЁННЫЙ СКРИПТ (только перевод, без комментариев):
 """
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=4096,
-                temperature=0.3  # Низкая температура для точности перевода
-            )
-
-            translated = response.choices[0].message.content.strip()
+            # Вызываем API в зависимости от провайдера
+            if self.provider == "gemini":
+                response = self.client.generate_content(prompt)
+                translated = response.text.strip()
+            elif self.provider == "grok":
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=4096,
+                    temperature=0.3  # Низкая температура для точности перевода
+                )
+                translated = response.choices[0].message.content.strip()
 
             return {
                 'script': translated,
@@ -537,7 +564,7 @@ class ScriptGenerator:
             }
 
         except Exception as e:
-            raise ScriptGeneratorError(f"Ошибка перевода скрипта: {str(e)}")
+            raise ScriptGeneratorError(f"Ошибка {self.provider.upper()} API: {str(e)}")
 
     async def optimize_for_seo(
         self,
@@ -594,14 +621,18 @@ class ScriptGenerator:
 тег1, тег2, тег3, тег4, тег5, тег6, тег7, тег8, тег9, тег10
 """
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=4096,
-                temperature=0.5
-            )
-
-            result_text = response.choices[0].message.content
+            # Вызываем API в зависимости от провайдера
+            if self.provider == "gemini":
+                response = self.client.generate_content(prompt)
+                result_text = response.text
+            elif self.provider == "grok":
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=4096,
+                    temperature=0.5
+                )
+                result_text = response.choices[0].message.content
 
             # Парсим результат
             optimized_script = self._extract_section(result_text, 'OPTIMIZED_SCRIPT') or script
@@ -624,7 +655,7 @@ class ScriptGenerator:
             }
 
         except Exception as e:
-            raise ScriptGeneratorError(f"Ошибка SEO-оптимизации: {str(e)}")
+            raise ScriptGeneratorError(f"Ошибка {self.provider.upper()} API: {str(e)}")
 
     def _calculate_keyword_density(self, text: str, keywords: List[str]) -> Dict[str, float]:
         """
