@@ -1,10 +1,9 @@
 # YouTube Automation Backend - Python Dependencies
 
 # AI & ML
-anthropic>=0.40.0         # Claude API для генерации скриптов
+openai>=1.0.0            # OpenAI-совместимый клиент для OpenRouter API
 google-auth>=2.16.0       # Google OAuth для YouTube API
 google-api-python-client>=2.111.0  # YouTube Data API
-openai>=1.0.0            # OpenAI API (альтернатива)
 
 # Data Processing
 requests>=2.31.0         # HTTP запросы

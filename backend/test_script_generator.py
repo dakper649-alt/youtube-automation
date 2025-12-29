@@ -34,19 +34,23 @@ async def test_script_generation():
 
     # API ключ из переменных окружения
     load_dotenv()
-    api_key = os.getenv('ANTHROPIC_API_KEY')
+    api_key = os.getenv('OPENROUTER_API_KEY')
 
-    if not api_key or api_key == 'your_anthropic_api_key_here':
-        print("\n❌ ОШИБКА: ANTHROPIC_API_KEY не найден в .env файле")
+    if not api_key or api_key == 'your_openrouter_api_key_here':
+        print("\n❌ ОШИБКА: OPENROUTER_API_KEY не найден в .env файле")
         print("\n💡 Добавьте в .env:")
-        print("   ANTHROPIC_API_KEY=sk-ant-...")
+        print("   OPENROUTER_API_KEY=sk-or-v1-...")
+        print("\n🌐 Получите бесплатный ключ: https://openrouter.ai/keys")
         return
 
     try:
         # Инициализация генератора
         print("\n🚀 Инициализация ScriptGenerator...")
-        generator = ScriptGenerator(api_key)
-        print("✅ Генератор инициализирован успешно")
+        model = "google/gemini-flash-1.5"
+        generator = ScriptGenerator(api_key, model=model)
+        print(f"✅ Генератор инициализирован успешно")
+        print(f"   🤖 Модель: {model}")
+        print(f"   💰 Стоимость: БЕСПЛАТНО!")
 
         # Генерация скрипта
         print("\n📝 Генерация скрипта...")

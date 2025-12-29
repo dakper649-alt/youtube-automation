@@ -12,10 +12,11 @@
 - Перевод скриптов на другие языки
 
 API:
-- Anthropic Claude API для генерации текста
+- OpenRouter API (доступ к Claude, GPT, Gemini и другим моделям)
+- Поддержка бесплатных моделей (google/gemini-flash-1.5)
 """
 
-import anthropic
+import openai  # OpenRouter использует OpenAI-совместимый API
 import asyncio
 import json
 import re
@@ -34,26 +35,43 @@ class InvalidAPIKeyError(ScriptGeneratorError):
 
 
 class ScriptGenerator:
-    """Класс для генерации скриптов видео с интеграцией Claude API"""
+    """Класс для генерации скриптов видео с интеграцией OpenRouter API"""
 
-    def __init__(self, anthropic_api_key: str):
+    def __init__(self, openrouter_api_key: str, model: str = "google/gemini-flash-1.5"):
         """
-        Инициализация генератора скриптов
+        Инициализация генератора скриптов с OpenRouter
 
         Args:
-            anthropic_api_key: API ключ Anthropic Claude
+            openrouter_api_key: API ключ OpenRouter
+            model: Модель для использования (по умолчанию google/gemini-flash-1.5)
+
+            Доступные бесплатные модели:
+            - "google/gemini-flash-1.5" (РЕКОМЕНДУЕТСЯ! Быстрая и бесплатная)
+            - "meta-llama/llama-3.1-8b-instruct:free"
+            - "mistralai/mistral-7b-instruct:free"
+
+            Платные дешёвые модели:
+            - "anthropic/claude-3-5-haiku-20241022" ($0.25/1M токенов)
+            - "openai/gpt-3.5-turbo" ($0.50/1M токенов)
 
         Raises:
             InvalidAPIKeyError: Если API ключ невалиден
         """
-        if not anthropic_api_key or anthropic_api_key == "your_anthropic_api_key_here":
-            raise InvalidAPIKeyError("Необходимо предоставить валидный Anthropic API ключ")
+        if not openrouter_api_key or openrouter_api_key == "your_openrouter_api_key_here":
+            raise InvalidAPIKeyError("Необходимо предоставить валидный OpenRouter API ключ")
 
         try:
-            self.client = anthropic.Anthropic(api_key=anthropic_api_key)
-            self.model = "claude-3-5-haiku-20241022"  # Дешёвая и быстрая модель
+            self.api_key = openrouter_api_key
+            self.model = model
+            self.base_url = "https://openrouter.ai/api/v1"
+
+            # Используем OpenAI-совместимый клиент для OpenRouter
+            self.client = openai.OpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url
+            )
         except Exception as e:
-            raise InvalidAPIKeyError(f"Ошибка инициализации Anthropic API: {str(e)}")
+            raise InvalidAPIKeyError(f"Ошибка инициализации OpenRouter API: {str(e)}")
 
     async def generate_script(
         self,
@@ -90,29 +108,29 @@ class ScriptGenerator:
             # Строим промпт
             prompt = self._build_script_prompt(topic, target_length, style, tone, language)
 
-            # Вызываем Claude API
-            response = self.client.messages.create(
+            # Вызываем OpenRouter API (OpenAI-совместимый формат)
+            response = self.client.chat.completions.create(
                 model=self.model,
-                max_tokens=4096,
-                temperature=0.7,
                 messages=[
                     {
                         "role": "user",
                         "content": prompt
                     }
-                ]
+                ],
+                max_tokens=4096,
+                temperature=0.7
             )
 
             # Парсим ответ
-            script_text = response.content[0].text
+            script_text = response.choices[0].message.content
 
             # Извлекаем метаданные
             result = self._parse_script_response(script_text, topic)
 
             return result
 
-        except anthropic.APIError as e:
-            raise ScriptGeneratorError(f"Ошибка Claude API: {str(e)}")
+        except openai.APIError as e:
+            raise ScriptGeneratorError(f"Ошибка OpenRouter API: {str(e)}")
         except Exception as e:
             raise ScriptGeneratorError(f"Неожиданная ошибка при генерации скрипта: {str(e)}")
 
@@ -412,14 +430,14 @@ class ScriptGenerator:
 Твой ответ:
 """
 
-            response = self.client.messages.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
+                messages=[{"role": "user", "content": scene_prompt}],
                 max_tokens=150,
-                temperature=0.5,
-                messages=[{"role": "user", "content": scene_prompt}]
+                temperature=0.5
             )
 
-            scene_description = response.content[0].text.strip()
+            scene_description = response.choices[0].message.content.strip()
 
             # Формируем финальный промпт
             final_prompt = base_template.format(scene=scene_description)
@@ -502,14 +520,14 @@ class ScriptGenerator:
 ПЕРЕВЕДЁННЫЙ СКРИПТ (только перевод, без комментариев):
 """
 
-            response = self.client.messages.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
+                messages=[{"role": "user", "content": prompt}],
                 max_tokens=4096,
-                temperature=0.3,  # Низкая температура для точности перевода
-                messages=[{"role": "user", "content": prompt}]
+                temperature=0.3  # Низкая температура для точности перевода
             )
 
-            translated = response.content[0].text.strip()
+            translated = response.choices[0].message.content.strip()
 
             return {
                 'script': translated,
@@ -576,14 +594,14 @@ class ScriptGenerator:
 тег1, тег2, тег3, тег4, тег5, тег6, тег7, тег8, тег9, тег10
 """
 
-            response = self.client.messages.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
+                messages=[{"role": "user", "content": prompt}],
                 max_tokens=4096,
-                temperature=0.5,
-                messages=[{"role": "user", "content": prompt}]
+                temperature=0.5
             )
 
-            result_text = response.content[0].text
+            result_text = response.choices[0].message.content
 
             # Парсим результат
             optimized_script = self._extract_section(result_text, 'OPTIMIZED_SCRIPT') or script
