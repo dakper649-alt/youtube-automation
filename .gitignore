@@ -1,6 +1,14 @@
 # Environment variables
 .env
 
+# API Keys and Cache (CRITICAL - Never commit!)
+.keys_secure.json
+.api_keys_cache.json
+.api_keys_status.json
+.batch_queue.json
+*.key
+*.keys
+
 # OS files
 .DS_Store
 

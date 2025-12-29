@@ -1,0 +1,27 @@
+{
+  "_comment": "Это шаблон для безопасного хранения API ключей",
+  "_instruction": "Скопируйте этот файл в .keys_secure.json и заполните своими ключами",
+  "_warning": "НИКОГДА не коммитьте .keys_secure.json в git!",
+
+  "gemini": [
+    "your_google_gemini_key_1_here",
+    "your_google_gemini_key_2_here"
+  ],
+
+  "huggingface": [
+    "your_huggingface_key_1_here",
+    "your_huggingface_key_2_here",
+    "your_huggingface_key_3_here"
+  ],
+
+  "youtube": [
+    "your_youtube_api_key_1_here",
+    "your_youtube_api_key_2_here",
+    "your_youtube_api_key_3_here"
+  ],
+
+  "grok": [
+    "your_grok_key_1_here",
+    "your_grok_key_2_here"
+  ]
+}

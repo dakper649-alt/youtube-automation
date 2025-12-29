@@ -6,6 +6,15 @@ openai>=1.0.0              # OpenAI-совместимый клиент для G
 google-auth>=2.16.0         # Google OAuth для YouTube API
 google-api-python-client>=2.111.0  # YouTube Data API
 
+# Image Generation
+huggingface-hub>=0.19.0    # Hugging Face API для генерации изображений
+diffusers>=0.24.0          # Stable Diffusion модели
+torch>=2.1.0               # PyTorch для работы с моделями
+torchvision>=0.16.0        # Computer vision утилиты
+transformers>=4.35.0       # Трансформеры для AI моделей
+pillow>=10.1.0             # Обработка изображений
+accelerate>=0.25.0         # Ускорение инференса моделей
+
 # Data Processing
 requests>=2.31.0         # HTTP запросы
 pandas>=2.0.0           # Анализ данных
