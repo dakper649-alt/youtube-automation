@@ -5,6 +5,7 @@
 .keys_secure.json
 .api_keys_cache.json
 .api_keys_status.json
+.batch_queue.json
 *.key
 *.keys
 

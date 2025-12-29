@@ -651,3 +651,39 @@ class SafeAPIManager(APIKeyManager):
                 report['elevenlabs']['active'] += 1
 
         return report
+
+    async def get_safe_hf_key(self) -> Optional[str]:
+        """
+        Возвращает безопасный Hugging Face ключ с проверкой лимитов
+        """
+
+        # Человекоподобная задержка
+        await self._human_like_delay()
+
+        # Проверяем waiting_list
+        self._check_waiting_list('huggingface')
+
+        # Фильтруем заблокированные ключи
+        available_keys = [
+            key for key in self.hf_keys
+            if self._get_key_hash(key) not in self.key_status['permanently_blocked']
+            and self._get_key_hash(key) not in self.key_status['waiting_list']
+        ]
+
+        if not available_keys:
+            raise ValueError(
+                "❌ Нет доступных Hugging Face ключей!\n"
+                "Добавьте: HF_API_KEY_1=your_key в .env"
+            )
+
+        # Выбираем ключ с наименьшим использованием
+        selected_key = self._select_least_used_key('huggingface', available_keys)
+
+        # HF имеет более мягкие лимиты, но всё равно проверяем
+        # Для бесплатного тарифа: ~1000 запросов/день
+        if self._check_daily_limit('huggingface', selected_key):
+            print(f"⚠️  HF ключ достиг дневного лимита, отправляю в waiting_list на 24 часа")
+            self._add_to_waiting_list('huggingface', selected_key, hours=24)
+            return await self.get_safe_hf_key()  # Рекурсивно
+
+        return selected_key
