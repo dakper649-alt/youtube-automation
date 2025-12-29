@@ -15,6 +15,11 @@ transformers>=4.35.0       # Трансформеры для AI моделей
 pillow>=10.1.0             # Обработка изображений
 accelerate>=0.25.0         # Ускорение инференса моделей
 
+# Text to Speech
+num2words>=0.5.12          # Конвертация цифр в слова
+pydub>=0.25.1              # Обработка аудио (обрезка пауз, нормализация)
+elevenlabs>=0.2.0          # ElevenLabs TTS API
+
 # Data Processing
 requests>=2.31.0         # HTTP запросы
 pandas>=2.0.0           # Анализ данных
