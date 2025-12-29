@@ -4,6 +4,7 @@
 # API Keys and Cache (CRITICAL - Never commit!)
 .keys_secure.json
 .api_keys_cache.json
+.api_keys_status.json
 *.key
 *.keys
 

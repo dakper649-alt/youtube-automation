@@ -246,3 +246,408 @@ class APIKeyManager:
             print()
 
         print("═" * 60)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ПРОДВИНУТЫЙ МЕНЕДЖЕР С ЗАЩИТОЙ ОТ БЛОКИРОВОК
+# ═══════════════════════════════════════════════════════════════════════════
+
+import random
+import asyncio
+from datetime import datetime, timedelta
+from typing import Optional
+
+
+class SafeAPIManager(APIKeyManager):
+    """
+    Безопасный менеджер API с защитой от блокировок
+
+    Возможности:
+    - Человекоподобные задержки между запросами
+    - Автоматическое определение заблокированных ключей
+    - Лист ожидания для ключей с исчерпанным лимитом
+    - Постоянное удаление мёртвых ключей
+    - Мониторинг здоровья каждого ключа
+    """
+
+    def __init__(self, cache_file: str = ".api_keys_cache.json", keys_file: str = ".keys_secure.json"):
+        super().__init__(cache_file, keys_file)
+
+        # ВАЖНО: ElevenLabs ключи загружаются из .env (НЕ хардкодятся!)
+        self.elevenlabs_keys = []
+        self._load_elevenlabs_keys()
+
+        # Статусы ключей
+        self.key_status_file = ".api_keys_status.json"
+        self.key_status = self._load_key_status()
+
+        # Настройки безопасности
+        self.safety_config = {
+            'min_delay_seconds': 2,      # Минимальная задержка между запросами
+            'max_delay_seconds': 8,      # Максимальная задержка
+            'elevenlabs_limit': 10000,   # Лимит ElevenLabs (символы/месяц)
+            'youtube_daily_limit': 10000, # Лимит YouTube (единицы/день)
+            'max_errors_before_ban': 3,  # Ошибок перед блокировкой
+            'cooldown_period_days': 30   # Период остывания (дней)
+        }
+
+        print(f"🛡️  SafeAPIManager инициализирован")
+        print(f"   ElevenLabs ключей: {len(self.elevenlabs_keys)}")
+
+    def _load_elevenlabs_keys(self):
+        """Загружает ElevenLabs ключи из .env (БЕЗОПАСНО)"""
+        # Загружаем пронумерованные ключи
+        for i in range(1, 11):  # До 10 ключей
+            key = os.getenv(f'ELEVENLABS_API_KEY_{i}')
+            if key and key != 'your_elevenlabs_key_here':
+                self.elevenlabs_keys.append(key)
+
+        # Или из списка
+        if not self.elevenlabs_keys:
+            keys_list = os.getenv('ELEVENLABS_KEYS_LIST', '')
+            if keys_list:
+                self.elevenlabs_keys = [k.strip() for k in keys_list.split(',') if k.strip()]
+
+    def _load_key_status(self) -> Dict:
+        """Загружает статусы ключей"""
+        if os.path.exists(self.key_status_file):
+            try:
+                with open(self.key_status_file, 'r') as f:
+                    return json.load(f)
+            except:
+                return self._create_empty_status()
+        return self._create_empty_status()
+
+    def _create_empty_status(self) -> Dict:
+        """Создаёт пустую структуру статусов"""
+        return {
+            'youtube': {},
+            'elevenlabs': {},
+            'waiting_list': {},
+            'permanently_blocked': []
+        }
+
+    def _save_key_status(self):
+        """Сохраняет статусы ключей"""
+        try:
+            with open(self.key_status_file, 'w') as f:
+                json.dump(self.key_status, f, indent=2)
+        except Exception as e:
+            print(f"⚠️  Ошибка сохранения статусов: {e}")
+
+    async def get_safe_youtube_key(self) -> Optional[str]:
+        """
+        Возвращает безопасный YouTube ключ с проверкой статуса
+        """
+
+        # Человекоподобная задержка
+        await self._human_like_delay()
+
+        # Проверяем waiting_list
+        self._check_waiting_list('youtube')
+
+        # Фильтруем заблокированные ключи
+        available_keys = [
+            key for key in self.youtube_keys
+            if self._get_key_hash(key) not in self.key_status['permanently_blocked']
+            and self._get_key_hash(key) not in self.key_status['waiting_list']
+        ]
+
+        if not available_keys:
+            raise ValueError("❌ Нет доступных YouTube API ключей! Все заблокированы или в ожидании.")
+
+        # Выбираем ключ с наименьшим использованием
+        selected_key = self._select_least_used_key('youtube', available_keys)
+
+        # Проверяем дневной лимит
+        if self._check_daily_limit('youtube', selected_key):
+            print(f"⚠️  Ключ достиг дневного лимита, отправляю в waiting_list на 24 часа")
+            self._add_to_waiting_list('youtube', selected_key, hours=24)
+            return await self.get_safe_youtube_key()  # Рекурсивно ищем другой
+
+        return selected_key
+
+    async def get_safe_elevenlabs_key(self) -> Optional[str]:
+        """
+        Возвращает безопасный ElevenLabs ключ с проверкой лимитов
+        """
+
+        if not self.elevenlabs_keys:
+            raise ValueError(
+                "❌ Нет ключей ElevenLabs в .env!\n"
+                "Добавьте: ELEVENLABS_API_KEY_1=your_key"
+            )
+
+        # Человекоподобная задержка
+        await self._human_like_delay()
+
+        # Проверяем waiting_list
+        self._check_waiting_list('elevenlabs')
+
+        # Фильтруем заблокированные ключи
+        available_keys = [
+            key for key in self.elevenlabs_keys
+            if self._get_key_hash(key) not in self.key_status['permanently_blocked']
+            and self._get_key_hash(key) not in self.key_status['waiting_list']
+        ]
+
+        if not available_keys:
+            raise ValueError("❌ Нет доступных ElevenLabs ключей!")
+
+        # Выбираем ключ с наименьшим использованием
+        selected_key = self._select_least_used_key('elevenlabs', available_keys)
+
+        # Проверяем месячный лимит
+        if self._check_monthly_limit('elevenlabs', selected_key):
+            print(f"⚠️  Ключ достиг месячного лимита (10,000 символов), отправляю в waiting_list на 30 дней")
+            self._add_to_waiting_list('elevenlabs', selected_key, days=30)
+            return await self.get_safe_elevenlabs_key()  # Рекурсивно
+
+        return selected_key
+
+    async def _human_like_delay(self):
+        """Человекоподобная задержка между запросами"""
+        delay = random.uniform(
+            self.safety_config['min_delay_seconds'],
+            self.safety_config['max_delay_seconds']
+        )
+
+        # Добавляем небольшую случайность (иногда быстрее, иногда медленнее)
+        if random.random() < 0.1:  # 10% шанс
+            delay *= random.uniform(1.5, 2.0)  # Иногда задержка дольше
+
+        await asyncio.sleep(delay)
+
+    def _get_key_hash(self, key: str) -> str:
+        """Возвращает хэш ключа для идентификации"""
+        return hashlib.md5(key.encode()).hexdigest()[:8]
+
+    def _select_least_used_key(self, service: str, available_keys: List[str]) -> str:
+        """Выбирает ключ с наименьшим использованием"""
+        if service not in self.key_status:
+            self.key_status[service] = {}
+
+        min_usage = float('inf')
+        selected_key = available_keys[0]
+
+        for key in available_keys:
+            key_hash = self._get_key_hash(key)
+            usage = self.key_status[service].get(key_hash, {}).get('usage', 0)
+
+            if usage < min_usage:
+                min_usage = usage
+                selected_key = key
+
+        return selected_key
+
+    def _check_daily_limit(self, service: str, key: str) -> bool:
+        """Проверяет не достигнут ли дневной лимит"""
+        key_hash = self._get_key_hash(key)
+
+        if key_hash not in self.key_status.get(service, {}):
+            return False
+
+        key_data = self.key_status[service][key_hash]
+
+        # Проверяем дату последнего использования
+        last_used = key_data.get('last_used_date')
+        if not last_used:
+            return False
+
+        last_date = datetime.fromisoformat(last_used).date()
+        today = datetime.now().date()
+
+        # Если новый день - сбрасываем счётчик
+        if last_date < today:
+            key_data['daily_usage'] = 0
+            return False
+
+        # Проверяем лимит
+        daily_usage = key_data.get('daily_usage', 0)
+        return daily_usage >= self.safety_config['youtube_daily_limit']
+
+    def _check_monthly_limit(self, service: str, key: str) -> bool:
+        """Проверяет месячный лимит (для ElevenLabs)"""
+        key_hash = self._get_key_hash(key)
+
+        if key_hash not in self.key_status.get(service, {}):
+            return False
+
+        key_data = self.key_status[service][key_hash]
+
+        # Проверяем месяц
+        last_reset = key_data.get('last_monthly_reset')
+        if not last_reset:
+            return False
+
+        last_reset_date = datetime.fromisoformat(last_reset)
+        now = datetime.now()
+
+        # Если прошёл месяц - сбрасываем
+        if (now - last_reset_date).days >= 30:
+            key_data['monthly_usage'] = 0
+            key_data['last_monthly_reset'] = now.isoformat()
+            self._save_key_status()
+            return False
+
+        # Проверяем лимит
+        monthly_usage = key_data.get('monthly_usage', 0)
+        return monthly_usage >= self.safety_config['elevenlabs_limit']
+
+    def _add_to_waiting_list(self, service: str, key: str, hours: int = 0, days: int = 0):
+        """Добавляет ключ в лист ожидания"""
+        key_hash = self._get_key_hash(key)
+
+        release_time = datetime.now() + timedelta(hours=hours, days=days)
+
+        self.key_status['waiting_list'][key_hash] = {
+            'service': service,
+            'added_at': datetime.now().isoformat(),
+            'release_at': release_time.isoformat(),
+            'reason': f"Лимит исчерпан ({hours}h {days}d cooldown)"
+        }
+
+        self._save_key_status()
+
+        print(f"📝 Ключ {key_hash} добавлен в waiting_list до {release_time.strftime('%Y-%m-%d %H:%M')}")
+
+    def _check_waiting_list(self, service: str):
+        """Проверяет waiting_list и освобождает ключи"""
+        now = datetime.now()
+        keys_to_remove = []
+
+        for key_hash, data in self.key_status['waiting_list'].items():
+            if data['service'] != service:
+                continue
+
+            release_time = datetime.fromisoformat(data['release_at'])
+
+            if now >= release_time:
+                keys_to_remove.append(key_hash)
+                print(f"✅ Ключ {key_hash} освобождён из waiting_list!")
+
+        # Удаляем освобождённые ключи
+        for key_hash in keys_to_remove:
+            del self.key_status['waiting_list'][key_hash]
+
+        if keys_to_remove:
+            self._save_key_status()
+
+    def mark_key_as_blocked(self, service: str, key: str, error_message: str):
+        """
+        Отмечает ключ как заблокированный
+
+        После 3 ошибок подряд - блокирует навсегда
+        """
+        key_hash = self._get_key_hash(key)
+
+        if service not in self.key_status:
+            self.key_status[service] = {}
+
+        if key_hash not in self.key_status[service]:
+            self.key_status[service][key_hash] = {
+                'errors': 0,
+                'last_error': None
+            }
+
+        key_data = self.key_status[service][key_hash]
+        key_data['errors'] += 1
+        key_data['last_error'] = {
+            'message': error_message,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        # Проверяем количество ошибок
+        if key_data['errors'] >= self.safety_config['max_errors_before_ban']:
+            print(f"🚫 Ключ {key_hash} ЗАБЛОКИРОВАН НАВСЕГДА после {key_data['errors']} ошибок!")
+            self.key_status['permanently_blocked'].append(key_hash)
+        else:
+            print(f"⚠️  Ошибка #{key_data['errors']} для ключа {key_hash}: {error_message}")
+
+        self._save_key_status()
+
+    def track_usage(self, service: str, key: str, units_used: int = 1):
+        """Отслеживает использование ключа"""
+        key_hash = self._get_key_hash(key)
+
+        if service not in self.key_status:
+            self.key_status[service] = {}
+
+        if key_hash not in self.key_status[service]:
+            self.key_status[service][key_hash] = {
+                'usage': 0,
+                'daily_usage': 0,
+                'monthly_usage': 0,
+                'last_used_date': datetime.now().isoformat(),
+                'last_monthly_reset': datetime.now().isoformat(),
+                'errors': 0
+            }
+
+        key_data = self.key_status[service][key_hash]
+        key_data['usage'] += units_used
+        key_data['daily_usage'] = key_data.get('daily_usage', 0) + units_used
+        key_data['monthly_usage'] = key_data.get('monthly_usage', 0) + units_used
+        key_data['last_used_date'] = datetime.now().isoformat()
+
+        self._save_key_status()
+
+    def get_health_report(self) -> Dict:
+        """Отчёт о здоровье всех ключей"""
+        report = {
+            'youtube': {
+                'total': len(self.youtube_keys),
+                'active': 0,
+                'waiting': 0,
+                'blocked': 0
+            },
+            'elevenlabs': {
+                'total': len(self.elevenlabs_keys),
+                'active': 0,
+                'waiting': 0,
+                'blocked': 0
+            },
+            'waiting_list_details': [],
+            'blocked_keys': []
+        }
+
+        # Подсчёт YouTube ключей
+        for key in self.youtube_keys:
+            key_hash = self._get_key_hash(key)
+            if key_hash in self.key_status['permanently_blocked']:
+                report['youtube']['blocked'] += 1
+                report['blocked_keys'].append({
+                    'service': 'youtube',
+                    'key_hash': key_hash
+                })
+            elif key_hash in self.key_status['waiting_list']:
+                report['youtube']['waiting'] += 1
+                waiting_data = self.key_status['waiting_list'][key_hash]
+                report['waiting_list_details'].append({
+                    'service': 'youtube',
+                    'key_hash': key_hash,
+                    'release_at': waiting_data['release_at']
+                })
+            else:
+                report['youtube']['active'] += 1
+
+        # Подсчёт ElevenLabs ключей
+        for key in self.elevenlabs_keys:
+            key_hash = self._get_key_hash(key)
+            if key_hash in self.key_status['permanently_blocked']:
+                report['elevenlabs']['blocked'] += 1
+                report['blocked_keys'].append({
+                    'service': 'elevenlabs',
+                    'key_hash': key_hash
+                })
+            elif key_hash in self.key_status['waiting_list']:
+                report['elevenlabs']['waiting'] += 1
+                waiting_data = self.key_status['waiting_list'][key_hash]
+                report['waiting_list_details'].append({
+                    'service': 'elevenlabs',
+                    'key_hash': key_hash,
+                    'release_at': waiting_data['release_at']
+                })
+            else:
+                report['elevenlabs']['active'] += 1
+
+        return report
