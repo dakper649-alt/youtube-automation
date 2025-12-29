@@ -1,0 +1,28 @@
+# YouTube Automation Backend - Python Dependencies
+
+# AI & ML
+anthropic>=0.40.0         # Claude API для генерации скриптов
+google-auth>=2.16.0       # Google OAuth для YouTube API
+google-api-python-client>=2.111.0  # YouTube Data API
+openai>=1.0.0            # OpenAI API (альтернатива)
+
+# Data Processing
+requests>=2.31.0         # HTTP запросы
+pandas>=2.0.0           # Анализ данных
+numpy>=1.24.0           # Численные вычисления
+
+# Environment & Configuration
+python-dotenv>=1.0.0    # Загрузка переменных окружения из .env
+
+# Async
+aiohttp>=3.9.0          # Асинхронные HTTP запросы
+asyncio>=3.4.3          # Асинхронное программирование
+
+# Utilities
+pydantic>=2.0.0         # Валидация данных
+python-dateutil>=2.8.2  # Работа с датами
+pytz>=2023.3            # Временные зоны
+
+# Testing
+pytest>=7.4.0           # Тестирование
+pytest-asyncio>=0.21.0  # Async тесты
