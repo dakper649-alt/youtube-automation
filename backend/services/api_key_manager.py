@@ -273,9 +273,63 @@ class SafeAPIManager(APIKeyManager):
     def __init__(self, cache_file: str = ".api_keys_cache.json", keys_file: str = ".keys_secure.json"):
         super().__init__(cache_file, keys_file)
 
-        # ВАЖНО: ElevenLabs ключи загружаются из .env (НЕ хардкодятся!)
-        self.elevenlabs_keys = []
-        self._load_elevenlabs_keys()
+        # ElevenLabs ключи (54 штуки! для озвучки)
+        self.elevenlabs_keys = [
+            "sk_7d4fb743c9c46ff75c9f9c22644146f679e24d9cb421f1fe",
+            "sk_2c1bc1a92b8fe305cb232a513aa3cf3bd5f07da43f110905",
+            "sk_4c7622ad930675321052bee5d9b8f01e421884e6ea478e92",
+            "sk_77ed505701399b00c8b9b025aa254eb36cbb76479b2d2c10",
+            "sk_d6a5b1beb89e9b04a136225b0730b267701737999b9f4179",
+            "sk_ecb305016273c82c4603f83f2b94ae128a64092699819240",
+            "sk_700141a470741e04c72ab22584aaf890d56ad7b896dc6497",
+            "sk_af7ac54991373892176946ea51fdbdd2374ec04649397f93",
+            "sk_dadd9bee27fb4af7dc357e295b4bacc726df01e3a1c77eae",
+            "sk_ed53c9f03a94d562a0fc9c750ab937951cde664e3903ef50",
+            "sk_48e9516e10e8c9dad761b2117aac46ed3abf259ddf1055e5",
+            "sk_f04971eeb19f75d975af60f4a482e0a5ae1d717d19bdc487",
+            "sk_a293959e0dcbe51b60e8e3bf98504c6c8ceb4a0270af4dde",
+            "sk_50b1d6b64fcc0fa98743b951f08de87965a8b38d8f08ae45",
+            "sk_dfc501510d2948fd577d1f82a25c248f2f4b05569e704249",
+            "sk_fa1be3a25745bf9e83d9208ac7cdd93351e7b14614b174d5",
+            "sk_707d5223d97f7f6424a1bfc090a4c79dcd6edc72ab87df49",
+            "sk_ebcc25d64b1025301756cf139a0e0c57a0b668d9cbdbae4d",
+            "sk_5c948ca488d3b99c0c3efe9ab293f87fe176f383286c4198",
+            "sk_5693f9032cef9eb46d04b08f51afa9ae77387fcc8834ce97",
+            "sk_e6e231d50b3e2e6afbb0beb196bfbc3e06078e222b486faf",
+            "sk_2a01e1613eeae2d423c0401055aed12c1f45398920411b1d",
+            "sk_1ccfd6847861521a334583a23417410d543527d0c4a4db1b",
+            "sk_1a6980d97874510d2e785e9aa8988210f7e8414e68e1df8f",
+            "sk_ffa640f4f873ef3d6de3516f3c316be08dccda8ce9a77b36",
+            "sk_a200508a1a194215cb193ce5d673f7d993d0b025013dc9d2",
+            "sk_44621c4fe406dc784ec447f33448d6740d8d931fefa8fdda",
+            "sk_2c32e61a93691c99265efcd4c1a3c96e93d89a9babbf0947",
+            "sk_e602477972b1388e7932c15cc6d99f19dce1a3a5906d7f5f",
+            "sk_5c4724a1ab8f6b48efbe6cb6babefaaa97cae96f083a2b22",
+            "sk_17b9d1c796bd8ee26b735dfaaa79a7c3e4f5180b68c248f8",
+            "sk_ed99ded91e375fa3b265a40db26d621da87327d215f30081",
+            "sk_9422daa757eabf4f4d2f361bff48874c80aebf0d266cca3f",
+            "sk_975d8ed664be3a8afa80dd37ff8f9392e6f3bdea236c289e",
+            "sk_fcf8f6d0ccca8baab6acfbbda6be576eca11bbec93bd89b9",
+            "sk_3226052c061fba530ca27948277078d48ef7f63fa8316c9e",
+            "sk_6ac64cb5f416f5379d72ae812d5214be27e0d802d819a5db",
+            "sk_70c9cf01c2a4809903df1db86ff537f1270c6a733b04205b",
+            "sk_485961e42500da92c63f10a308fc292db953d2380020843e",
+            "sk_c3a226cd3363f00ca3019175b01814c4cb8da2a64787f4ee",
+            "sk_3a817606236744e07b7c51d4272950fa177594c7ad78d093",
+            "sk_d40671dcc1a5f143e93413abc819fbbd2143f7d092d21223",
+            "sk_3f59404321c83b6ac545768f83d7049dece063e77603745c",
+            "sk_730be114539ca4a812f7756fc251160f4d89c3e43bebc72f",
+            "sk_6ac35fa36cb5fda0e12d3f007d6e5d0eb4de87540e751c58",
+            "sk_71500056f52d6dd6e0433fed7effbbd1927bd6149216549d",
+            "sk_0a4cd274e32fd83a641ae916211aff534e86d89a31bc822e",
+            "sk_b1d8e4c33d7f437d46cdf85bf8670df395737420c18a489b",
+            "sk_2e39342922870af82632a3404ea80406423efb131232da47",
+            "sk_9866d38386abc99b23dbe62838715ecbc29db877c46e95b3",
+            "sk_4cd7e5dd4e541d9304670ff3fc8cfb29d179e2dbf414e7aa",
+            "sk_2651ae662837b13a70b3ef637aa7f50efc210c4b4cfe74f7",
+            "sk_760fee9a30fd97669a6308f6ee3d50846d7effb91fc90e1e",
+            "sk_bb3e9f37d10ad3cf0df9ef193d9e833b5abc71e962cddec3"
+        ]
 
         # Статусы ключей
         self.key_status_file = ".api_keys_status.json"
