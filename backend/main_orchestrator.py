@@ -492,6 +492,17 @@ class YouTubeAutomationOrchestrator:
 
         from services.video_editor import VideoEditor
         from services.subtitle_gen import SubtitleGenerator
+        from services.output_manager import OutputManager
+        from services.telegram_notifier import TelegramNotifier
+        import time
+
+        # Инициализация
+        output_manager = OutputManager()
+        telegram = TelegramNotifier()
+        start_time = time.time()
+
+        # Уведомление о старте
+        telegram.notify_start(topic, niche, style, voice)
 
         print(f"\n🎬 ПОЛНЫЙ ПАЙПЛАЙН СОЗДАНИЯ ВИДЕО")
         print(f"=" * 80)
@@ -501,14 +512,21 @@ class YouTubeAutomationOrchestrator:
         print(f"📝 Субтитры: {subtitle_style}")
         print(f"=" * 80)
 
-        # Создаём папку для проекта
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        project_dir = f"./output/{timestamp}_{topic[:30].replace(' ', '_')}"
-        os.makedirs(project_dir, exist_ok=True)
-        os.makedirs(f"{project_dir}/images", exist_ok=True)
+        # Создаём проект
+        project_dir = output_manager.create_video_project(
+            title=topic,
+            metadata={
+                'niche': niche,
+                'style': style,
+                'voice': voice,
+                'subtitle_style': subtitle_style,
+                'language': 'ru'
+            }
+        )
 
         try:
             # ШАГ 1: Генерация скрипта
+            telegram.notify_progress(topic, "generating_script", 20)
             if on_progress:
                 on_progress("generating_script")
             print(f"\n[1/5] ✍️ Генерация скрипта...")
@@ -531,6 +549,7 @@ class YouTubeAutomationOrchestrator:
             print(f"   ✅ Скрипт: {script_result['word_count']} слов")
 
             # ШАГ 2: Генерация промптов для изображений
+            telegram.notify_progress(topic, "generating_images", 40)
             if on_progress:
                 on_progress("generating_images")
             print(f"\n[2/5] 🎨 Генерация изображений...")
@@ -549,16 +568,18 @@ class YouTubeAutomationOrchestrator:
                 script=script_text,
                 image_prompts=image_prompts,
                 style=style,
-                output_dir=f"{project_dir}/images"
+                output_dir=str(project_dir / "images")
             )
 
             print(f"   ✅ Изображений: {len(scenes)}")
 
             # ШАГ 3: Применение Ken Burns эффектов
+            telegram.notify_progress(topic, "applying_effects", 60)
             print(f"\n[3/5] 🎬 Применение Ken Burns эффектов...")
             scenes = self.ken_burns.process_scenes(scenes, script_result)
 
             # ШАГ 4: Генерация озвучки
+            telegram.notify_progress(topic, "generating_audio", 75)
             if on_progress:
                 on_progress("generating_audio")
             print(f"\n[4/5] 🎙️ Генерация озвучки...")
@@ -572,10 +593,11 @@ class YouTubeAutomationOrchestrator:
             audio_path = await voice_manager.generate_audio(
                 text=script_text,
                 voice_id=voice,
-                output_path=f"{project_dir}/audio.mp3"
+                output_path=str(project_dir / "audio.mp3")
             )
 
             # ШАГ 5: Финальный монтаж
+            telegram.notify_progress(topic, "editing_video", 90)
             if on_progress:
                 on_progress("editing_video")
             print(f"\n[5/5] 🎞️ Финальный монтаж...")
@@ -583,21 +605,66 @@ class YouTubeAutomationOrchestrator:
             subtitle_gen = SubtitleGenerator()
             video_editor = VideoEditor(self.ken_burns, subtitle_gen)
 
+            # Получаем длительность аудио для метаданных
+            from moviepy.editor import AudioFileClip
+            audio_clip = AudioFileClip(audio_path)
+            audio_duration = audio_clip.duration
+            audio_clip.close()
+
             output_video = video_editor.create_video(
                 scenes=scenes,
                 audio_path=audio_path,
-                output_path=f"{project_dir}/video.mp4",
+                output_path=str(project_dir / "temp" / "video.mp4"),
                 subtitle_text=script_text,
                 subtitle_style=subtitle_style,
                 add_transitions=True
             )
 
+            # Время генерации
+            generation_time = time.time() - start_time
+
+            # Сохраняем финальное видео
+            final_path = output_manager.save_final_video(
+                video_path=output_video,
+                project_dir=project_dir,
+                metadata={
+                    'title': topic,
+                    'niche': niche,
+                    'style': style,
+                    'voice': voice,
+                    'subtitle_style': subtitle_style,
+                    'duration': audio_duration,
+                    'image_count': len(scenes),
+                    'word_count': script_result['word_count'],
+                    'language': 'ru',
+                    'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'script': script_text
+                },
+                cleanup_temp=True
+            )
+
+            # Уведомление об успехе
+            telegram.notify_success(
+                title=topic,
+                metadata={
+                    'duration': audio_duration,
+                    'image_count': len(scenes),
+                    'language': 'Русский',
+                    'style': style,
+                    'voice': voice,
+                    'subtitle_style': subtitle_style
+                },
+                output_path=str(project_dir),
+                generation_time=generation_time
+            )
+
             print(f"\n🎉 ВИДЕО ГОТОВО!")
             print(f"📁 Папка проекта: {project_dir}")
-            print(f"🎬 Видео: {output_video}")
+            print(f"🎬 Видео: {final_path}")
 
-            return output_video
+            return str(final_path)
 
         except Exception as e:
+            telegram.notify_error(topic, "unknown", str(e))
             print(f"\n❌ ОШИБКА: {e}")
             raise
