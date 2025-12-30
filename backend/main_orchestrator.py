@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from services.api_key_manager import APIKeyManager
 from services.content_analyzer import ContentAnalyzer, ContentAnalyzerError
-from services.analyzer import YouTubeAnalyzer, YouTubeAnalyzerError
+from services.analyzer_advanced import YouTubeAnalyzer, YouTubeAnalyzerError
 from services.script_gen import ScriptGenerator, ScriptGeneratorError
 from typing import Dict, List, Optional
 from datetime import datetime
