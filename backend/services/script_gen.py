@@ -1,679 +1,261 @@
 """
-Модуль для генерации скриптов видео с помощью AI
-
-Функционал:
-- Генерация уникальных скриптов на основе темы
-- Адаптация стиля под целевую аудиторию
-- Структурирование контента (вступление, основная часть, заключение)
-- Оптимизация длительности скрипта
-- Добавление hooks и call-to-action
-- Генерация вариантов заголовков и описаний
-- Генерация промптов для изображений
-- Перевод скриптов на другие языки
-
-Поддерживаемые провайдеры:
-- Google Gemini (основной, бесплатный) - gemini-1.5-flash
-- Grok (X.AI, запасной) - grok-beta
+Script Generator - генерация YouTube сценариев
+Поддерживает: Google Gemini 2.0 Flash, OpenAI GPT-4o-mini
 """
 
-import google.generativeai as genai
-import openai
-import asyncio
-import json
-import re
+import os
 from typing import Dict, List, Optional
-from datetime import datetime
+import time
 
+# Новая библиотека Gemini
+from google import genai
+from google.genai import types
+
+# OpenAI для fallback
+from openai import OpenAI
 
 class ScriptGeneratorError(Exception):
-    """Базовый класс для ошибок генератора"""
+    """Ошибка генерации скрипта"""
     pass
-
-
-class InvalidAPIKeyError(ScriptGeneratorError):
-    """Неверный API ключ"""
-    pass
-
 
 class ScriptGenerator:
-    """Класс для генерации скриптов видео с поддержкой Google Gemini и Grok"""
+    """Генератор YouTube сценариев"""
 
-    def __init__(
-        self,
-        api_key: str,
-        provider: str = "gemini",
-        model: Optional[str] = None
-    ):
+    def __init__(self, api_key_manager, provider: str = 'gemini'):
         """
-        Инициализация генератора скриптов
-
         Args:
-            api_key: API ключ
-            provider: "gemini" (по умолчанию) или "grok"
-            model: Модель (опционально, выбирается автоматически)
-
-        Провайдеры:
-            Google Gemini (основной):
-            - Бесплатная модель: "gemini-1.5-flash"
-            - Быстрая и качественная генерация
-
-            Grok (X.AI, запасной):
-            - Модель: "grok-beta"
-            - OpenAI-совместимый API
-
-        Raises:
-            InvalidAPIKeyError: Если API ключ невалиден
+            api_key_manager: SafeAPIManager instance
+            provider: 'gemini' или 'openai'
         """
-        if not api_key or api_key in ["your_api_key_here", "your_openrouter_api_key_here"]:
-            raise InvalidAPIKeyError("Необходимо предоставить валидный API ключ")
-
+        self.key_manager = api_key_manager
         self.provider = provider.lower()
 
-        if self.provider not in ["gemini", "grok"]:
-            raise InvalidAPIKeyError(f"Неподдерживаемый провайдер: {provider}. Используйте 'gemini' или 'grok'")
+        # Gemini setup (новая библиотека)
+        if self.provider == 'gemini':
+            gemini_key = self.key_manager.get_gemini_key()
+            if not gemini_key:
+                raise ScriptGeneratorError("Нет доступных Gemini API ключей")
 
-        try:
-            if self.provider == "gemini":
-                # Google Gemini
-                self.model = model or "gemini-1.5-flash"
-                genai.configure(api_key=api_key)
-                self.client = genai.GenerativeModel(self.model)
+            self.client = genai.Client(api_key=gemini_key)
+            self.model_id = 'gemini-2.0-flash-exp'
+            print(f"✅ ScriptGenerator: используется Gemini 2.0 Flash")
 
-            elif self.provider == "grok":
-                # Grok (X.AI)
-                self.model = model or "grok-beta"
-                self.api_key = api_key
-                self.base_url = "https://api.x.ai/v1"
-                self.client = openai.OpenAI(
-                    api_key=self.api_key,
-                    base_url=self.base_url
-                )
+        # OpenAI setup (fallback)
+        elif self.provider == 'openai':
+            openai_key = os.getenv('OPENAI_API_KEY')
+            if not openai_key:
+                raise ScriptGeneratorError("Нет OPENAI_API_KEY в .env")
 
-        except Exception as e:
-            raise InvalidAPIKeyError(f"Ошибка инициализации {self.provider.upper()} API: {str(e)}")
+            self.client = OpenAI(api_key=openai_key)
+            print(f"✅ ScriptGenerator: используется OpenAI GPT-4o-mini")
+
+        else:
+            raise ScriptGeneratorError(f"Неизвестный provider: {provider}")
 
     async def generate_script(
         self,
         topic: str,
         target_length: int = 1000,
         language: str = 'ru',
-        style: str = 'educational',
-        tone: str = 'professional'
+        niche: str = 'psychology'
     ) -> Dict:
         """
-        Генерирует скрипт для видео
-
-        Args:
-            topic: Тема видео
-            target_length: Целевая длина в словах (по умолчанию 1000)
-            language: Язык ('ru', 'en')
-            style: Стиль ('educational', 'entertaining', 'documentary')
-            tone: Тон ('professional', 'casual', 'humorous')
-
-        Returns:
-            dict с полями:
-                - script: текст скрипта
-                - word_count: количество слов
-                - estimated_duration: примерная длительность в секундах
-                - title_suggestions: варианты заголовков (3-5 штук)
-                - hook: захватывающее начало
-                - cta: призыв к действию
-                - generated_at: время генерации
-
-        Raises:
-            ScriptGeneratorError: При ошибках генерации
-        """
-        try:
-            # Строим промпт
-            prompt = self._build_script_prompt(topic, target_length, style, tone, language)
-
-            # Вызываем API в зависимости от провайдера
-            if self.provider == "gemini":
-                response = self.client.generate_content(prompt)
-                script_text = response.text
-            elif self.provider == "grok":
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    max_tokens=4096,
-                    temperature=0.7
-                )
-                script_text = response.choices[0].message.content
-
-            # Парсим ответ
-            result = self._parse_script_response(script_text, topic)
-
-            return result
-
-        except Exception as e:
-            raise ScriptGeneratorError(f"Ошибка {self.provider.upper()} API: {str(e)}")
-
-    def _build_script_prompt(
-        self,
-        topic: str,
-        target_length: int,
-        style: str,
-        tone: str,
-        language: str
-    ) -> str:
-        """
-        Строит промпт для Claude API
+        Генерация сценария
 
         Args:
             topic: Тема видео
             target_length: Целевая длина в словах
-            style: Стиль контента
-            tone: Тон
-            language: Язык
+            language: Язык ('ru' или 'en')
+            niche: Ниша
 
         Returns:
-            str: Готовый промпт
+            Dict с ключами: hook, script, cta, title_suggestions, word_count
         """
-        lang_instructions = {
-            'ru': 'на русском языке',
-            'en': 'in English'
-        }
 
-        style_instructions = {
-            'educational': 'образовательный стиль с объяснениями и примерами',
-            'entertaining': 'развлекательный стиль с юмором и интригой',
-            'documentary': 'документальный стиль с фактами и историями'
-        }
+        prompt = self._build_prompt(topic, target_length, language, niche)
 
-        tone_instructions = {
-            'professional': 'профессиональный тон, серьёзный',
-            'casual': 'разговорный тон, дружелюбный',
-            'humorous': 'юмористический тон, с шутками'
-        }
+        try:
+            if self.provider == 'gemini':
+                content = await self._generate_with_gemini(prompt)
+            elif self.provider == 'openai':
+                content = await self._generate_with_openai(prompt)
+
+            # Парсинг результата
+            result = self._parse_response(content)
+            result['word_count'] = len(result['script'].split())
+
+            return result
+
+        except Exception as e:
+            # Fallback на OpenAI если Gemini упал
+            if self.provider == 'gemini':
+                print(f"⚠️ Gemini failed: {e}")
+                print(f"🔄 Переключаюсь на OpenAI fallback...")
+
+                try:
+                    openai_key = os.getenv('OPENAI_API_KEY')
+                    if openai_key:
+                        content = await self._generate_with_openai_direct(prompt, openai_key)
+                        result = self._parse_response(content)
+                        result['word_count'] = len(result['script'].split())
+                        return result
+                    else:
+                        raise ScriptGeneratorError(f"Gemini failed и нет OpenAI ключа: {e}")
+                except Exception as openai_error:
+                    raise ScriptGeneratorError(f"Оба API упали: Gemini ({e}), OpenAI ({openai_error})")
+            else:
+                raise ScriptGeneratorError(f"Ошибка {self.provider.upper()} API: {str(e)}")
+
+    async def _generate_with_gemini(self, prompt: str) -> str:
+        """Генерация через новый Gemini API"""
+
+        response = self.client.models.generate_content(
+            model=self.model_id,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.9,
+                max_output_tokens=3000,
+                response_modalities=['TEXT']
+            )
+        )
+
+        return response.text
+
+    async def _generate_with_openai(self, prompt: str) -> str:
+        """Генерация через OpenAI"""
+
+        response = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Ты профессиональный YouTube сценарист."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.9,
+            max_tokens=3000
+        )
+
+        return response.choices[0].message.content
+
+    async def _generate_with_openai_direct(self, prompt: str, api_key: str) -> str:
+        """Прямая генерация через OpenAI (для fallback)"""
+
+        client = OpenAI(api_key=api_key)
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Ты профессиональный YouTube сценарист."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.9,
+            max_tokens=3000
+        )
+
+        return response.choices[0].message.content
+
+    def _build_prompt(
+        self,
+        topic: str,
+        target_length: int,
+        language: str,
+        niche: str
+    ) -> str:
+        """Построение промпта для AI"""
+
+        lang_instruction = "на русском языке" if language == 'ru' else "in English"
 
         prompt = f"""
-Создай профессиональный скрипт для YouTube видео {lang_instructions[language]}.
+Создай профессиональный YouTube сценарий {lang_instruction} для видео на тему:
+"{topic}"
 
-ТЕМА: {topic}
+НИША: {niche}
+ЦЕЛЕВАЯ ДЛИНА: ~{target_length} слов
 
-ТРЕБОВАНИЯ:
-- Длина: примерно {target_length} слов
-- Стиль: {style_instructions.get(style, style)}
-- Тон: {tone_instructions.get(tone, tone)}
-
-СТРУКТУРА СКРИПТА:
-1. HOOK (10-15 секунд): Захватывающее начало, которое заставит досмотреть видео до конца
-   - Интригующий вопрос ИЛИ
-   - Шокирующий факт ИЛИ
-   - Обещание ценности
-
-2. ОСНОВНАЯ ЧАСТЬ: Раскрытие темы
-   - Логичная структура
-   - Интересные факты и примеры
-   - Простые объяснения сложных вещей
-   - Эмоциональные триггеры
-
-3. ЗАКЛЮЧЕНИЕ: Завершение
-   - Краткое резюме ключевых моментов
-   - Призыв к действию (CTA)
-
-ВАЖНЫЕ ПРИНЦИПЫ:
-- Начни с СИЛЬНОГО хука - первые 10 секунд критичны!
-- Используй короткие предложения для динамики
-- Добавь эмоциональные триггеры (удивление, любопытство, польза)
-- Говори на языке аудитории, без сложных терминов
-- Закончи чётким призывом к действию
-
-ФОРМАТ ОТВЕТА (строго следуй этой структуре):
+СТРУКТУРА СЦЕНАРИЯ:
 
 [HOOK]
-<Текст захватывающего начала - первые 10-15 секунд видео>
+(Напиши цепляющий hook на 2-3 предложения, который заставит зрителя продолжить смотреть)
 
 [SCRIPT]
-<Полный текст скрипта от начала до конца, включая hook и заключение>
+(Напиши основной сценарий длиной ~{target_length} слов.
+Используй:
+- Конкретные примеры
+- Истории
+- Статистику
+- Практические советы
+- Эмоциональные триггеры
+Раздели на логические блоки с подзаголовками)
 
 [CTA]
-<Призыв к действию - что должны сделать зрители>
+(Напиши призыв к действию на 2-3 предложения: подписка, лайк, комментарии)
 
 [TITLES]
-1. <Вариант заголовка 1 - кликабельный, с интригой>
-2. <Вариант заголовка 2 - с числами/вопросом>
-3. <Вариант заголовка 3 - эмоциональный>
-4. <Вариант заголовка 4 - с обещанием пользы>
-5. <Вариант заголовка 5 - короткий и ёмкий>
+(Предложи 3 варианта заголовков для видео)
 
-Начинай генерацию!
+ВАЖНО:
+- Пиши разговорным языком
+- Используй короткие предложения
+- Избегай сложных терминов
+- Делай паузы для подчёркивания важных моментов
 """
 
-        return prompt
+        return prompt.strip()
 
-    def _parse_script_response(self, response_text: str, topic: str) -> Dict:
-        """
-        Парсит ответ Claude и извлекает структурированные данные
+    def _parse_response(self, content: str) -> Dict:
+        """Парсинг ответа AI"""
 
-        Args:
-            response_text: Текст ответа от Claude
-            topic: Исходная тема (для fallback)
-
-        Returns:
-            dict: Структурированный результат
-        """
-        # Извлекаем секции
-        hook = self._extract_section(response_text, 'HOOK')
-        script = self._extract_section(response_text, 'SCRIPT')
-        cta = self._extract_section(response_text, 'CTA')
-        titles = self._extract_titles(response_text)
-
-        # Если не удалось распарсить, используем весь текст как скрипт
-        if not script:
-            script = response_text
-
-        # Если hook не извлечён, берём начало скрипта
-        if not hook:
-            hook = script[:200] if len(script) > 200 else script
-
-        # Если CTA не извлечён, используем стандартный
-        if not cta:
-            cta = "Подпишитесь на канал, поставьте лайк и напишите в комментариях, что вы думаете об этой теме!"
-
-        # Если заголовки не извлечены, генерируем базовый
-        if not titles:
-            titles = [topic]
-
-        # Подсчёт слов и времени
-        word_count = len(script.split())
-        # Средняя скорость речи: 150 слов в минуту = 2.5 слова в секунду
-        estimated_duration = int(word_count / 2.5)
-
-        return {
-            'script': script,
-            'hook': hook,
-            'cta': cta,
-            'title_suggestions': titles,
-            'word_count': word_count,
-            'estimated_duration': estimated_duration,
-            'generated_at': datetime.now().isoformat()
+        result = {
+            'hook': '',
+            'script': '',
+            'cta': '',
+            'title_suggestions': []
         }
 
-    def _extract_section(self, text: str, section_name: str) -> Optional[str]:
-        """
-        Извлекает секцию из текста
-
-        Args:
-            text: Полный текст
-            section_name: Название секции (HOOK, SCRIPT, CTA)
-
-        Returns:
-            str или None: Содержимое секции
-        """
-        # Паттерн для извлечения секции
-        pattern = rf'\[{section_name}\](.*?)(?:\[|$)'
-        match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-
-        if match:
-            return match.group(1).strip()
-        return None
-
-    def _extract_titles(self, text: str) -> List[str]:
-        """
-        Извлекает варианты заголовков
-
-        Args:
-            text: Полный текст
-
-        Returns:
-            list: Список заголовков
-        """
-        titles_section = self._extract_section(text, 'TITLES')
-        if not titles_section:
-            return []
-
-        # Ищем пронумерованные строки
-        titles = re.findall(r'\d+\.\s*(.+)', titles_section)
-        return [t.strip() for t in titles if t.strip()]
-
-    async def generate_image_prompts(
-        self,
-        script: str,
-        style: str = "minimalist_stick_figure",
-        images_per_minute: int = 15
-    ) -> List[Dict]:
-        """
-        Генерирует промпты для изображений на основе скрипта
-
-        Args:
-            script: Текст скрипта
-            style: Стиль изображений
-            images_per_minute: Сколько изображений на минуту видео
-
-        Returns:
-            List[Dict]: Список промптов с таймкодами
-            Каждый dict содержит:
-                - timestamp: время в секундах
-                - prompt: промпт для генерации изображения
-                - scene_description: краткое описание сцены
-                - duration: длительность показа изображения
-
-        Raises:
-            ScriptGeneratorError: При ошибках генерации
-        """
-        try:
-            # Разбиваем скрипт на предложения
-            sentences = self._split_into_sentences(script)
-
-            if not sentences:
-                raise ScriptGeneratorError("Скрипт пустой или не содержит предложений")
-
-            # Вычисляем интервал между изображениями
-            word_count = len(script.split())
-            duration_seconds = word_count / 2.5  # ~150 слов в минуту
-            image_interval = 60 / images_per_minute  # секунд на изображение
-
-            num_images = max(1, int(duration_seconds / image_interval))
-            sentences_per_image = max(1, len(sentences) // num_images)
-
-            prompts = []
-            current_time = 0
-
-            for i in range(0, len(sentences), sentences_per_image):
-                chunk = ' '.join(sentences[i:i+sentences_per_image])
-
-                # Генерируем промпт для этого отрывка
-                prompt = await self._generate_single_image_prompt(chunk, style)
-
-                prompts.append({
-                    'timestamp': round(current_time, 2),
-                    'prompt': prompt,
-                    'scene_description': chunk[:100],  # первые 100 символов
-                    'duration': round(image_interval, 2)
-                })
-
-                current_time += image_interval
-
-            return prompts
-
-        except Exception as e:
-            raise ScriptGeneratorError(f"Ошибка генерации промптов для изображений: {str(e)}")
-
-    async def _generate_single_image_prompt(
-        self,
-        text_chunk: str,
-        style: str
-    ) -> str:
-        """
-        Генерирует детальный промпт для одного изображения
-
-        Args:
-            text_chunk: Отрывок текста скрипта
-            style: Стиль изображения
-
-        Returns:
-            str: Промпт для генерации изображения
-        """
-        # Базовые стили
-        STYLE_TEMPLATES = {
-            "minimalist_stick_figure": "simple stick figure illustration, minimalist line art, {scene}, white background, black outlines, educational diagram style",
-            "cinematic_photography": "cinematic photography, {scene}, dramatic lighting, film grain, professional, high detail, 4k",
-            "digital_painting": "digital painting, {scene}, painterly style, rich colors, detailed illustration, artstation quality",
-            "cartoon": "cartoon illustration, {scene}, bright colors, fun and friendly style, smooth lines",
-            "sketch": "pencil sketch, {scene}, hand-drawn, loose linework, artistic",
-            "vector": "vector art, {scene}, clean lines, flat colors, modern design",
-            "3d_render": "3D render, {scene}, realistic lighting, detailed textures, octane render",
-            "watercolor": "watercolor painting, {scene}, soft colors, artistic brushstrokes",
-            "infographic": "infographic style, {scene}, clean layout, icons, professional design",
-            "anime": "anime style, {scene}, vibrant colors, detailed characters, manga aesthetic"
+        # Парсинг секций
+        sections = {
+            'hook': ('[HOOK]', '[SCRIPT]'),
+            'script': ('[SCRIPT]', '[CTA]'),
+            'cta': ('[CTA]', '[TITLES]'),
+            'titles': ('[TITLES]', None)
         }
 
-        base_template = STYLE_TEMPLATES.get(style, STYLE_TEMPLATES["minimalist_stick_figure"])
+        for key, (start_marker, end_marker) in sections.items():
+            try:
+                start_idx = content.find(start_marker)
+                if start_idx == -1:
+                    continue
 
-        try:
-            # Используем AI чтобы описать сцену
-            scene_prompt = f"""
-Опиши визуальную сцену для иллюстрации этого текста в 1-2 предложениях.
+                start_idx += len(start_marker)
 
-Текст:
-"{text_chunk[:300]}"
+                if end_marker:
+                    end_idx = content.find(end_marker, start_idx)
+                    if end_idx == -1:
+                        section_text = content[start_idx:]
+                    else:
+                        section_text = content[start_idx:end_idx]
+                else:
+                    section_text = content[start_idx:]
 
-Опиши ЧТО нужно показать на изображении:
-- Персонажи (если есть)
-- Действия
-- Объекты
-- Настроение/атмосферу
+                section_text = section_text.strip()
 
-Ответ НА АНГЛИЙСКОМ ЯЗЫКЕ, кратко (максимум 50 слов), для AI генерации изображений.
-Используй простые и чёткие термины.
+                if key == 'titles':
+                    # Парсинг заголовков
+                    lines = [line.strip() for line in section_text.split('\n') if line.strip()]
+                    titles = []
+                    for line in lines:
+                        # Убираем номера и маркеры
+                        clean_line = line.lstrip('0123456789.-) ').strip()
+                        if clean_line:
+                            titles.append(clean_line)
+                    result['title_suggestions'] = titles[:3]
+                else:
+                    result[key] = section_text
 
-Пример формата ответа:
-"person sitting at desk with laptop, thinking, lightbulb above head, modern office setting, focused expression"
+            except Exception as e:
+                print(f"⚠️ Ошибка парсинга секции {key}: {e}")
 
-Твой ответ:
-"""
+        # Валидация
+        if not result['script']:
+            raise ScriptGeneratorError("Не удалось распарсить сценарий")
 
-            # Вызываем API в зависимости от провайдера
-            if self.provider == "gemini":
-                response = self.client.generate_content(scene_prompt)
-                scene_description = response.text.strip()
-            elif self.provider == "grok":
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": scene_prompt}],
-                    max_tokens=150,
-                    temperature=0.5
-                )
-                scene_description = response.choices[0].message.content.strip()
-
-            # Формируем финальный промпт
-            final_prompt = base_template.format(scene=scene_description)
-
-            # Добавляем детализацию
-            final_prompt += ", high quality, professional composition, clear focus"
-
-            return final_prompt
-
-        except Exception as e:
-            # Fallback: простое описание
-            return base_template.format(scene=text_chunk[:100])
-
-    def _split_into_sentences(self, text: str) -> List[str]:
-        """
-        Разбивает текст на предложения
-
-        Args:
-            text: Текст для разбиения
-
-        Returns:
-            List[str]: Список предложений
-        """
-        # Разбиение по точкам, восклицательным и вопросительным знакам
-        sentences = re.split(r'[.!?]+', text)
-        # Фильтруем пустые и очень короткие предложения
-        return [s.strip() for s in sentences if s.strip() and len(s.strip()) > 10]
-
-    async def translate_script(
-        self,
-        script: str,
-        target_language: str
-    ) -> Dict:
-        """
-        Переводит скрипт на другой язык с сохранением стиля
-
-        Args:
-            script: Исходный скрипт
-            target_language: Целевой язык ('en', 'ru', 'es', 'fr', 'de', и т.д.)
-
-        Returns:
-            dict с полями:
-                - script: переведённый скрипт
-                - source_language: исходный язык (auto-detected)
-                - target_language: целевой язык
-                - word_count: количество слов
-
-        Raises:
-            ScriptGeneratorError: При ошибках перевода
-        """
-        lang_names = {
-            'en': 'English',
-            'ru': 'Russian (Русский)',
-            'es': 'Spanish (Español)',
-            'fr': 'French (Français)',
-            'de': 'German (Deutsch)',
-            'it': 'Italian (Italiano)',
-            'pt': 'Portuguese (Português)',
-            'ja': 'Japanese (日本語)',
-            'zh': 'Chinese (中文)',
-            'ko': 'Korean (한국어)'
-        }
-
-        target_lang_name = lang_names.get(target_language, target_language)
-
-        try:
-            prompt = f"""
-Переведи этот скрипт для YouTube видео на {target_lang_name}.
-
-ВАЖНЫЕ ТРЕБОВАНИЯ:
-- Сохрани стиль и тон оригинала
-- Адаптируй под культурный контекст целевого языка
-- Сохрани эмоциональные триггеры и убедительность
-- Сохрани примерно такую же длину
-- НЕ добавляй ничего от себя, только перевод
-
-ИСХОДНЫЙ СКРИПТ:
-{script}
-
-ПЕРЕВЕДЁННЫЙ СКРИПТ (только перевод, без комментариев):
-"""
-
-            # Вызываем API в зависимости от провайдера
-            if self.provider == "gemini":
-                response = self.client.generate_content(prompt)
-                translated = response.text.strip()
-            elif self.provider == "grok":
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=4096,
-                    temperature=0.3  # Низкая температура для точности перевода
-                )
-                translated = response.choices[0].message.content.strip()
-
-            return {
-                'script': translated,
-                'source_language': 'auto',
-                'target_language': target_language,
-                'word_count': len(translated.split())
-            }
-
-        except Exception as e:
-            raise ScriptGeneratorError(f"Ошибка {self.provider.upper()} API: {str(e)}")
-
-    async def optimize_for_seo(
-        self,
-        script: str,
-        primary_keywords: List[str]
-    ) -> Dict:
-        """
-        Оптимизирует скрипт для SEO
-
-        Args:
-            script: Исходный скрипт
-            primary_keywords: Список ключевых слов для SEO
-
-        Returns:
-            dict с полями:
-                - optimized_script: оптимизированный скрипт
-                - keyword_density: плотность ключевых слов
-                - seo_title: SEO-оптимизированный заголовок
-                - seo_description: Описание для YouTube
-                - tags: Рекомендованные теги
-
-        Raises:
-            ScriptGeneratorError: При ошибках оптимизации
-        """
-        try:
-            keywords_str = ", ".join(primary_keywords)
-
-            prompt = f"""
-Оптимизируй этот скрипт для YouTube SEO.
-
-КЛЮЧЕВЫЕ СЛОВА: {keywords_str}
-
-ЗАДАЧИ:
-1. Естественно интегрируй ключевые слова в скрипт (без спама!)
-2. Создай SEO-заголовок (до 60 символов)
-3. Создай описание для YouTube (2-3 предложения)
-4. Предложи 10 тегов для видео
-
-ИСХОДНЫЙ СКРИПТ:
-{script}
-
-ФОРМАТ ОТВЕТА:
-
-[OPTIMIZED_SCRIPT]
-<оптимизированный скрипт>
-
-[SEO_TITLE]
-<заголовок до 60 символов>
-
-[DESCRIPTION]
-<описание для YouTube>
-
-[TAGS]
-тег1, тег2, тег3, тег4, тег5, тег6, тег7, тег8, тег9, тег10
-"""
-
-            # Вызываем API в зависимости от провайдера
-            if self.provider == "gemini":
-                response = self.client.generate_content(prompt)
-                result_text = response.text
-            elif self.provider == "grok":
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=4096,
-                    temperature=0.5
-                )
-                result_text = response.choices[0].message.content
-
-            # Парсим результат
-            optimized_script = self._extract_section(result_text, 'OPTIMIZED_SCRIPT') or script
-            seo_title = self._extract_section(result_text, 'SEO_TITLE') or "Untitled"
-            description = self._extract_section(result_text, 'DESCRIPTION') or ""
-            tags_text = self._extract_section(result_text, 'TAGS') or ""
-
-            # Парсим теги
-            tags = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
-
-            # Подсчёт плотности ключевых слов
-            keyword_density = self._calculate_keyword_density(optimized_script, primary_keywords)
-
-            return {
-                'optimized_script': optimized_script,
-                'keyword_density': keyword_density,
-                'seo_title': seo_title,
-                'seo_description': description,
-                'tags': tags
-            }
-
-        except Exception as e:
-            raise ScriptGeneratorError(f"Ошибка {self.provider.upper()} API: {str(e)}")
-
-    def _calculate_keyword_density(self, text: str, keywords: List[str]) -> Dict[str, float]:
-        """
-        Вычисляет плотность ключевых слов
-
-        Args:
-            text: Текст для анализа
-            keywords: Список ключевых слов
-
-        Returns:
-            dict: {keyword: density_percentage}
-        """
-        text_lower = text.lower()
-        total_words = len(text.split())
-
-        density = {}
-        for keyword in keywords:
-            count = text_lower.count(keyword.lower())
-            density[keyword] = round((count / total_words * 100), 2) if total_words > 0 else 0.0
-
-        return density
+        return result
