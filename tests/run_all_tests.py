@@ -4,14 +4,18 @@
 
 import subprocess
 import sys
+import os
 
-def run_test(test_name, command):
+# Добавляем корень проекта в путь
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+def run_test(test_name, script_path):
     """Запускает тест и возвращает результат"""
     print(f"\n{'=' * 80}")
     print(f"🧪 ЗАПУСК: {test_name}")
     print(f"{'=' * 80}\n")
 
-    result = subprocess.run(command, shell=True)
+    result = subprocess.run([sys.executable, script_path])
     return result.returncode == 0
 
 def main():
@@ -19,15 +23,22 @@ def main():
     print("║" + " " * 25 + "ПОЛНОЕ ТЕСТИРОВАНИЕ СИСТЕМЫ" + " " * 25 + "║")
     print("╚" + "=" * 78 + "╝")
 
+    # Определяем путь к тестам
+    tests_dir = os.path.dirname(__file__)
+
     tests = [
-        ("Юнит-тесты модулей", "python tests/test_modules.py"),
-        ("Интеграционный тест", "python tests/test_full_pipeline.py"),
+        ("Юнит-тесты модулей", os.path.join(tests_dir, "test_modules.py")),
+        ("Интеграционный тест", os.path.join(tests_dir, "test_full_pipeline.py")),
     ]
 
     results = {}
 
-    for test_name, command in tests:
-        results[test_name] = run_test(test_name, command)
+    for test_name, script_path in tests:
+        if os.path.exists(script_path):
+            results[test_name] = run_test(test_name, script_path)
+        else:
+            print(f"⚠️ Тест не найден: {script_path}")
+            results[test_name] = False
 
     # Итоговый отчёт
     print("\n" + "=" * 80)
@@ -49,8 +60,8 @@ def main():
         print("=" * 80)
         print("\n✅ Система полностью готова к работе!")
         print("\n📝 Следующие шаги:")
-        print("   1. python backend/create_video_cli.py  - создать одно видео")
-        print("   2. python backend/batch_create.py      - массовая генерация")
+        print("   1. python quick_start.py           - быстрый старт (5 мин)")
+        print("   2. python backend/create_video_cli.py - создать полное видео")
         print("=" * 80)
         return 0
     else:
