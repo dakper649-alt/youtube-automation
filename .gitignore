@@ -51,3 +51,8 @@ projects/
 # Temporary files
 *.tmp
 .cache/
+
+# Test outputs
+quick_start_result.txt
+test_output.txt
+test_pipeline_output.txt
