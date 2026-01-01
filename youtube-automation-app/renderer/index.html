@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Automation Studio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>🎬 YouTube Automation Studio</h1>
+      <div class="header-actions">
+        <button class="btn-settings" onclick="openSettings()">⚙️ Настройки</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="app-main">
+      <!-- Create Video Section -->
+      <section class="create-video-section">
+        <h2>Создать новое видео</h2>
+        <form id="createVideoForm">
+          <div class="form-group">
+            <label for="topic">Тема видео:</label>
+            <input
+              type="text"
+              id="topic"
+              placeholder="Как токсичные люди изучают ваши привычки"
+              required
+            >
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="niche">Ниша:</label>
+              <select id="niche">
+                <option value="psychology">Психология</option>
+                <option value="health">Здоровье</option>
+                <option value="business">Бизнес</option>
+                <option value="education">Образование</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="style">Стиль изображений:</label>
+              <select id="style">
+                <option value="minimalist_stick_figure">Minimalist Stick Figure</option>
+                <option value="realistic_photo">Realistic Photo</option>
+                <option value="anime_style">Anime Style</option>
+                <option value="watercolor">Watercolor</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="voice">Голос:</label>
+              <select id="voice">
+                <option value="rachel">Rachel (Female, US)</option>
+                <option value="adam">Adam (Male, US)</option>
+                <option value="bella">Bella (Female, UK)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="length">Длина:</label>
+              <select id="length">
+                <option value="800">~8 мин (800 слов)</option>
+                <option value="1200" selected>~10 мин (1200 слов)</option>
+                <option value="1500">~15 мин (1500 слов)</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary">
+            🚀 Создать видео
+          </button>
+        </form>
+      </section>
+
+      <!-- Progress Section -->
+      <section class="progress-section" id="progressSection" style="display: none;">
+        <h2>Генерация видео</h2>
+        <div class="progress-info">
+          <p id="currentStep">Инициализация...</p>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+          </div>
+          <p id="progressPercent">0%</p>
+          <p id="timeRemaining">Осталось: ~60 минут</p>
+        </div>
+      </section>
+
+      <!-- Videos List -->
+      <section class="videos-section">
+        <h2>Готовые видео</h2>
+        <div id="videosList" class="videos-grid">
+          <div class="empty-state">
+            <p>Видео ещё не созданы</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
