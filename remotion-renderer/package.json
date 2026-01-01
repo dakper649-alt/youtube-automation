@@ -1,0 +1,19 @@
+{
+  "name": "youtube-automation-renderer",
+  "version": "1.0.0",
+  "description": "Professional video renderer with Remotion",
+  "scripts": {
+    "render": "remotion render src/index.tsx out/video.mp4",
+    "preview": "remotion preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@types/react": "^18.2.0",
+    "typescript": "^5.0.0"
+  }
+}
