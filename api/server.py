@@ -133,9 +133,9 @@ if __name__ == '__main__':
     print("\n" + "=" * 80)
     print("🚀 FLASK API SERVER")
     print("=" * 80)
-    print("Server: http://localhost:5000")
-    print("Health: http://localhost:5000/api/health")
+    print("Server: http://localhost:5001")
+    print("Health: http://localhost:5001/api/health")
     print("=" * 80)
     print()
 
-    app.run(host='127.0.0.1', port=5000, debug=False, threaded=True)
+    app.run(host='127.0.0.1', port=5001, debug=False, threaded=True)
