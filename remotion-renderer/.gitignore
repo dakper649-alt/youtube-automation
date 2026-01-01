@@ -1,0 +1,13 @@
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# Remotion
+out/
+.remotion/
+src/config.json
+
+# OS
+.DS_Store
+Thumbs.db
