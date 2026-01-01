@@ -27,6 +27,7 @@ from services.api_key_manager import APIKeyManager
 from services.content_analyzer import ContentAnalyzer, ContentAnalyzerError
 from services.analyzer_advanced import YouTubeAnalyzer, YouTubeAnalyzerError
 from services.script_gen import ScriptGenerator, ScriptGeneratorError
+from services.remotion_renderer import RemotionRenderer
 from typing import Dict, List, Optional
 from datetime import datetime
 import asyncio
@@ -48,7 +49,8 @@ class YouTubeAutomationOrchestrator:
     def __init__(
         self,
         cache_file: str = ".api_keys_cache.json",
-        keys_file: str = ".keys_secure.json"
+        keys_file: str = ".keys_secure.json",
+        use_remotion: bool = True
     ):
         """
         Инициализация оркестратора
@@ -58,14 +60,17 @@ class YouTubeAutomationOrchestrator:
         - YouTubeAnalyzer: анализ YouTube каналов
         - ContentAnalyzer: поиск идей для видео
         - ScriptGenerator: генерация скриптов
+        - Remotion/MoviePy: рендеринг видео
 
         Args:
             cache_file: Файл для кэша использования API ключей
             keys_file: Файл с API ключами
+            use_remotion: Использовать Remotion (True) или MoviePy (False)
 
         Raises:
             YouTubeAutomationError: При ошибках инициализации
         """
+        self.use_remotion = use_remotion
         try:
             print("=" * 70)
             print("🚀 YOUTUBE AUTOMATION ORCHESTRATOR")
@@ -111,6 +116,24 @@ class YouTubeAutomationOrchestrator:
             from services.ken_burns import KenBurnsEffect
             self.ken_burns = KenBurnsEffect()
             print("   ✅ KenBurnsEffect инициализирован")
+
+            # 6. Выбор рендерера видео
+            print("⚙️  Выбор рендерера видео...")
+            if self.use_remotion:
+                try:
+                    self.video_renderer = RemotionRenderer()
+                    print("   ✅ Remotion рендерер инициализирован (профессиональные эффекты)")
+                except Exception as e:
+                    print(f"   ⚠️  Remotion недоступен: {e}")
+                    print("   🔄 Переключение на MoviePy...")
+                    self.use_remotion = False
+                    from services.video_editor import VideoEditor
+                    self.video_renderer = VideoEditor()
+                    print("   ✅ MoviePy рендерер инициализирован (базовые эффекты)")
+            else:
+                from services.video_editor import VideoEditor
+                self.video_renderer = VideoEditor()
+                print("   ✅ MoviePy рендерер инициализирован (базовые эффекты)")
 
             print()
             print("=" * 70)
@@ -602,23 +625,59 @@ class YouTubeAutomationOrchestrator:
                 on_progress("editing_video")
             print(f"\n[5/5] 🎞️ Финальный монтаж...")
 
-            subtitle_gen = SubtitleGenerator()
-            video_editor = VideoEditor(self.ken_burns, subtitle_gen)
-
             # Получаем длительность аудио для метаданных
             from moviepy.editor import AudioFileClip
             audio_clip = AudioFileClip(audio_path)
             audio_duration = audio_clip.duration
             audio_clip.close()
 
-            output_video = video_editor.create_video(
-                scenes=scenes,
-                audio_path=audio_path,
-                output_path=str(project_dir / "temp" / "video.mp4"),
-                subtitle_text=script_text,
-                subtitle_style=subtitle_style,
-                add_transitions=True
-            )
+            if self.use_remotion:
+                # Remotion рендер - профессиональные эффекты
+                print("   🎨 Используется Remotion для профессиональных эффектов")
+
+                # Подготовка сцен для Remotion
+                remotion_scenes = []
+
+                for scene in scenes:
+                    remotion_scene = {
+                        'imagePath': scene['path'],
+                        'duration': scene['duration'],
+                        'effect': scene.get('effect_type', 'zoom_in'),
+                        'subtitle': {
+                            'text': scene.get('subtitle_text', ''),
+                            'startTime': scene.get('subtitle_start', 0),
+                            'endTime': scene.get('subtitle_end', scene['duration']),
+                            'highlighted': scene.get('highlight_keywords', False)
+                        } if scene.get('subtitle_text') else None
+                    }
+                    remotion_scenes.append(remotion_scene)
+
+                # Рендер через Remotion
+                output_video = self.video_renderer.render_video(
+                    scenes=remotion_scenes,
+                    audio_path=str(audio_path),
+                    output_path=str(project_dir / "temp" / "video.mp4"),
+                    fps=30,
+                    width=1920,
+                    height=1080
+                )
+
+            else:
+                # MoviePy рендер - базовые эффекты
+                print("   📼 Используется MoviePy для базовых эффектов")
+
+                from services.video_editor import VideoEditor
+                subtitle_gen = SubtitleGenerator()
+                video_editor = VideoEditor(self.ken_burns, subtitle_gen)
+
+                output_video = video_editor.create_video(
+                    scenes=scenes,
+                    audio_path=audio_path,
+                    output_path=str(project_dir / "temp" / "video.mp4"),
+                    subtitle_text=script_text,
+                    subtitle_style=subtitle_style,
+                    add_transitions=True
+                )
 
             # Время генерации
             generation_time = time.time() - start_time
