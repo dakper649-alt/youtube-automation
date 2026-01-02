@@ -28,6 +28,7 @@ imageio-ffmpeg>=0.4.9      # FFmpeg wrapper для imageio
 
 # Data Processing
 requests>=2.31.0         # HTTP запросы
+httpx>=0.24.0           # HTTP клиент для Groq API
 pandas>=2.0.0           # Анализ данных
 numpy>=1.24.0           # Численные вычисления
 

@@ -86,6 +86,19 @@ class APIKeyManager:
             if key and key != 'your_youtube_api_key_here':
                 self.youtube_keys.append(key)
 
+        # Groq ключи (для Llama 3.1 70B)
+        self.groq_keys = []
+        for i in range(1, 11):  # Поддержка до 10 ключей
+            key = os.getenv(f'GROQ_API_KEY_{i}')
+            if key and key != 'your_groq_api_key_here':
+                self.groq_keys.append(key)
+
+        # Старый формат
+        if not self.groq_keys:
+            key = os.getenv('GROQ_API_KEY')
+            if key and key != 'your_groq_api_key_here':
+                self.groq_keys.append(key)
+
         # Grok ключи (загружаются из GROK_KEYS_LIST как раньше)
         self.grok_keys = []
         keys_env = os.getenv('GROK_KEYS_LIST', '')
@@ -107,6 +120,9 @@ class APIKeyManager:
 
                 if 'youtube' in secure_keys:
                     self.youtube_keys.extend([k for k in secure_keys['youtube'] if k not in self.youtube_keys])
+
+                if 'groq' in secure_keys:
+                    self.groq_keys.extend([k for k in secure_keys['groq'] if k not in self.groq_keys])
 
                 if 'grok' in secure_keys:
                     self.grok_keys.extend([k for k in secure_keys['grok'] if k not in self.grok_keys])
@@ -140,6 +156,16 @@ class APIKeyManager:
                 "Добавьте в .env: GOOGLE_API_KEY_1=your_key"
             )
         return self._rotate_key('gemini', self.gemini_keys)
+
+    def get_groq_key(self) -> str:
+        """Возвращает Groq ключ с наименьшим использованием"""
+        if not self.groq_keys:
+            raise ValueError(
+                "Нет доступных Groq API ключей!\n"
+                "Добавьте в .env: GROQ_API_KEY_1=your_key\n"
+                "Получить ключ: https://console.groq.com"
+            )
+        return self._rotate_key('groq', self.groq_keys)
 
     def get_hf_key(self) -> str:
         """Возвращает Hugging Face ключ с наименьшим использованием"""
