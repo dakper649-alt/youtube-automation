@@ -79,9 +79,10 @@ youtube-automation-app/
 Flask сервер (`api/server.py`) предоставляет:
 
 - `GET /api/health` - Health check
-- `POST /api/create-video` - Создать видео
-- `GET /api/progress/<task_id>` - Получить прогресс
-- `POST /api/open-file` - Открыть файл
+- `POST /api/create-video` - Создать видео (использует MainOrchestrator для РЕАЛЬНОЙ генерации)
+- `GET /api/progress/<task_id>` - Получить прогресс в реальном времени
+- `GET /api/videos` - Получить список готовых видео
+- `POST /api/open-file` - Открыть файл в системном приложении
 
 ## Использование
 
@@ -99,8 +100,8 @@ Flask сервер (`api/server.py`) предоставляет:
 - Проверьте что Flask установлен: `pip list | grep -i flask`
 
 **"Connection refused"**
-- Flask сервер должен быть запущен на порту 5000
-- Проверьте: `curl http://localhost:5000/api/health`
+- Flask сервер должен быть запущен на порту 5001
+- Проверьте: `curl http://localhost:5001/api/health`
 
 **Видео не создаётся**
 - Проверьте API ключи в `.env`

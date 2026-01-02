@@ -32,7 +32,7 @@ async function startVideoGeneration(data) {
 
   try {
     // Call Flask API через fetch
-    const response = await fetch('http://localhost:5000/api/create-video', {
+    const response = await fetch('http://localhost:5001/api/create-video', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -58,7 +58,7 @@ async function startVideoGeneration(data) {
 function pollProgress(taskId) {
   const interval = setInterval(async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/progress/${taskId}`);
+      const response = await fetch(`http://localhost:5001/api/progress/${taskId}`);
       const data = await response.json();
 
       updateProgress(data);
@@ -134,7 +134,7 @@ function addVideoToList(video) {
 
 function openVideo(path) {
   // Open video in default app
-  fetch('http://localhost:5000/api/open-file', {
+  fetch('http://localhost:5001/api/open-file', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -157,7 +157,7 @@ if (window.electronAPI) {
 // Check if backend is ready on load
 window.addEventListener('load', async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/health');
+    const response = await fetch('http://localhost:5001/api/health');
     if (response.ok) {
       console.log('✅ Flask server is running');
     }
