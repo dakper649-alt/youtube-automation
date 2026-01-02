@@ -1,6 +1,6 @@
 """
 Script Generator - генерация YouTube сценариев
-Поддерживает: Groq (Llama 3.1 70B), Google Gemini 2.0 Flash, OpenAI GPT-4o-mini
+Поддерживает: Hugging Face (Llama/Qwen/Mistral), Groq (Llama 3.1 70B), Google Gemini 2.0 Flash, OpenAI GPT-4o-mini
 """
 
 import os
@@ -75,10 +75,22 @@ class ScriptGenerator:
 
         prompt = self._build_prompt(topic, target_length, language, niche)
 
-        # Пробуем провайдеры по порядку: Groq -> Gemini -> OpenAI
+        # Пробуем провайдеры по порядку: HF -> Groq -> Gemini -> OpenAI
         errors = []
 
-        # 1. Попытка через Groq (быстрее и бесплатно)
+        # 1. Попытка через Hugging Face (БЕСПЛАТНО! 125 ключей!)
+        try:
+            print("🤗 Пробуем Hugging Face API (Llama 3.1 / Qwen / Mistral)...")
+            content = await self._generate_with_huggingface(prompt)
+            result = self._parse_response(content)
+            result['word_count'] = len(result['script'].split())
+            print("✅ Скрипт сгенерирован через Hugging Face")
+            return result
+        except Exception as e:
+            print(f"⚠️  Hugging Face failed: {e}")
+            errors.append(f"Hugging Face: {e}")
+
+        # 2. Попытка через Groq (бесплатно)
         try:
             print("🚀 Пробуем Groq API (Llama 3.1 70B)...")
             content = await self._generate_with_groq(prompt)
@@ -90,7 +102,7 @@ class ScriptGenerator:
             print(f"⚠️  Groq failed: {e}")
             errors.append(f"Groq: {e}")
 
-        # 2. Попытка через Gemini
+        # 3. Попытка через Gemini
         try:
             print("🔄 Пробуем Gemini API (Gemini 2.0 Flash)...")
             content = await self._generate_with_gemini(prompt)
@@ -102,7 +114,7 @@ class ScriptGenerator:
             print(f"⚠️  Gemini failed: {e}")
             errors.append(f"Gemini: {e}")
 
-        # 3. Попытка через OpenAI (последний fallback)
+        # 4. Попытка через OpenAI (последний fallback)
         try:
             print("🔄 Пробуем OpenAI API (GPT-4o-mini)...")
             openai_key = os.getenv('OPENAI_API_KEY')
@@ -120,6 +132,61 @@ class ScriptGenerator:
 
         # Все провайдеры упали
         raise ScriptGeneratorError(f"Все API провайдеры недоступны:\n" + "\n".join(errors))
+
+    async def _generate_with_huggingface(self, prompt: str) -> str:
+        """Генерация через Hugging Face Inference API (БЕСПЛАТНО!)"""
+
+        hf_key = self.key_manager.get_hf_key()
+        if not hf_key:
+            raise ValueError("Нет доступных Hugging Face ключей!")
+
+        # Лучшие бесплатные модели для генерации текста
+        models = [
+            "meta-llama/Llama-3.1-8B-Instruct",      # Быстрая и умная
+            "Qwen/Qwen2.5-72B-Instruct",             # Очень умная
+            "mistralai/Mistral-7B-Instruct-v0.3"     # Надёжная
+        ]
+
+        for model in models:
+            try:
+                url = f"https://api-inference.huggingface.co/models/{model}"
+                headers = {
+                    "Authorization": f"Bearer {hf_key}",
+                    "Content-Type": "application/json"
+                }
+
+                data = {
+                    "inputs": prompt,
+                    "parameters": {
+                        "max_new_tokens": 4000,
+                        "temperature": 0.7,
+                        "top_p": 0.9,
+                        "return_full_text": False
+                    }
+                }
+
+                async with httpx.AsyncClient(timeout=120.0) as client:
+                    response = await client.post(url, headers=headers, json=data)
+
+                    if response.status_code == 503:
+                        # Модель загружается, пробуем следующую
+                        print(f"   ⏳ {model.split('/')[-1]} загружается, пробуем другую...")
+                        continue
+
+                    response.raise_for_status()
+                    result = response.json()
+
+                    # Hugging Face возвращает массив или объект
+                    if isinstance(result, list) and len(result) > 0:
+                        return result[0].get('generated_text', '')
+                    elif isinstance(result, dict):
+                        return result.get('generated_text', '')
+
+            except Exception as e:
+                print(f"   ⚠️  {model.split('/')[-1]} failed: {e}")
+                continue
+
+        raise Exception("Все Hugging Face модели недоступны")
 
     async def _generate_with_groq(self, prompt: str) -> str:
         """Генерация через Groq API (Llama 3.1 70B)"""
