@@ -167,14 +167,19 @@ def real_generation(task_id, data):
             )
         )
 
-        # Получаем метаданные видео
-        from moviepy.editor import VideoFileClip
+        # Получаем метаданные видео (через ffprobe вместо MoviePy)
+        import subprocess
+        import json
         try:
-            video_clip = VideoFileClip(video_path)
-            duration_seconds = int(video_clip.duration)
+            result = subprocess.run([
+                'ffprobe', '-v', 'quiet', '-print_format', 'json',
+                '-show_format', video_path
+            ], capture_output=True, text=True)
+            probe_data = json.loads(result.stdout)
+            duration_seconds = int(float(probe_data['format']['duration']))
             duration_str = f"{duration_seconds // 60}:{duration_seconds % 60:02d}"
-            video_clip.close()
-        except:
+        except Exception as e:
+            print(f"   ⚠️  Не удалось получить метаданные видео: {e}")
             duration_str = "N/A"
 
         # Завершение
