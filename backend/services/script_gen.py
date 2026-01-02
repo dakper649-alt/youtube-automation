@@ -1,11 +1,12 @@
 """
 Script Generator - генерация YouTube сценариев
-Поддерживает: Google Gemini 2.0 Flash, OpenAI GPT-4o-mini
+Поддерживает: Groq (Llama 3.1 70B), Google Gemini 2.0 Flash, OpenAI GPT-4o-mini
 """
 
 import os
 from typing import Dict, List, Optional
 import time
+import httpx
 
 # Новая библиотека Gemini
 from google import genai
@@ -74,37 +75,80 @@ class ScriptGenerator:
 
         prompt = self._build_prompt(topic, target_length, language, niche)
 
-        try:
-            if self.provider == 'gemini':
-                content = await self._generate_with_gemini(prompt)
-            elif self.provider == 'openai':
-                content = await self._generate_with_openai(prompt)
+        # Пробуем провайдеры по порядку: Groq -> Gemini -> OpenAI
+        errors = []
 
-            # Парсинг результата
+        # 1. Попытка через Groq (быстрее и бесплатно)
+        try:
+            print("🚀 Пробуем Groq API (Llama 3.1 70B)...")
+            content = await self._generate_with_groq(prompt)
             result = self._parse_response(content)
             result['word_count'] = len(result['script'].split())
-
+            print("✅ Скрипт сгенерирован через Groq")
             return result
-
         except Exception as e:
-            # Fallback на OpenAI если Gemini упал
-            if self.provider == 'gemini':
-                print(f"⚠️ Gemini failed: {e}")
-                print(f"🔄 Переключаюсь на OpenAI fallback...")
+            print(f"⚠️  Groq failed: {e}")
+            errors.append(f"Groq: {e}")
 
-                try:
-                    openai_key = os.getenv('OPENAI_API_KEY')
-                    if openai_key:
-                        content = await self._generate_with_openai_direct(prompt, openai_key)
-                        result = self._parse_response(content)
-                        result['word_count'] = len(result['script'].split())
-                        return result
-                    else:
-                        raise ScriptGeneratorError(f"Gemini failed и нет OpenAI ключа: {e}")
-                except Exception as openai_error:
-                    raise ScriptGeneratorError(f"Оба API упали: Gemini ({e}), OpenAI ({openai_error})")
-            else:
-                raise ScriptGeneratorError(f"Ошибка {self.provider.upper()} API: {str(e)}")
+        # 2. Попытка через Gemini
+        try:
+            print("🔄 Пробуем Gemini API (Gemini 2.0 Flash)...")
+            content = await self._generate_with_gemini(prompt)
+            result = self._parse_response(content)
+            result['word_count'] = len(result['script'].split())
+            print("✅ Скрипт сгенерирован через Gemini")
+            return result
+        except Exception as e:
+            print(f"⚠️  Gemini failed: {e}")
+            errors.append(f"Gemini: {e}")
+
+        # 3. Попытка через OpenAI (последний fallback)
+        try:
+            print("🔄 Пробуем OpenAI API (GPT-4o-mini)...")
+            openai_key = os.getenv('OPENAI_API_KEY')
+            if not openai_key:
+                raise ValueError("OPENAI_API_KEY не найден в .env")
+
+            content = await self._generate_with_openai_direct(prompt, openai_key)
+            result = self._parse_response(content)
+            result['word_count'] = len(result['script'].split())
+            print("✅ Скрипт сгенерирован через OpenAI")
+            return result
+        except Exception as e:
+            print(f"⚠️  OpenAI failed: {e}")
+            errors.append(f"OpenAI: {e}")
+
+        # Все провайдеры упали
+        raise ScriptGeneratorError(f"Все API провайдеры недоступны:\n" + "\n".join(errors))
+
+    async def _generate_with_groq(self, prompt: str) -> str:
+        """Генерация через Groq API (Llama 3.1 70B)"""
+
+        groq_key = self.key_manager.get_groq_key()
+        if not groq_key:
+            raise ValueError("Нет доступных Groq API ключей!")
+
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {groq_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "model": "llama-3.1-70b-versatile",
+            "messages": [
+                {"role": "system", "content": "Ты профессиональный YouTube сценарист."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 4000
+        }
+
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(url, headers=headers, json=data)
+            response.raise_for_status()
+            result = response.json()
+            return result['choices'][0]['message']['content']
 
     async def _generate_with_gemini(self, prompt: str) -> str:
         """Генерация через новый Gemini API"""
