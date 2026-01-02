@@ -49,8 +49,7 @@ class YouTubeAutomationOrchestrator:
     def __init__(
         self,
         cache_file: str = ".api_keys_cache.json",
-        keys_file: str = ".keys_secure.json",
-        use_remotion: bool = True
+        keys_file: str = ".keys_secure.json"
     ):
         """
         Инициализация оркестратора
@@ -60,17 +59,15 @@ class YouTubeAutomationOrchestrator:
         - YouTubeAnalyzer: анализ YouTube каналов
         - ContentAnalyzer: поиск идей для видео
         - ScriptGenerator: генерация скриптов
-        - Remotion/MoviePy: рендеринг видео
+        - Remotion: профессиональный рендеринг видео
 
         Args:
             cache_file: Файл для кэша использования API ключей
             keys_file: Файл с API ключами
-            use_remotion: Использовать Remotion (True) или MoviePy (False)
 
         Raises:
             YouTubeAutomationError: При ошибках инициализации
         """
-        self.use_remotion = use_remotion
         try:
             print("=" * 70)
             print("🚀 YOUTUBE AUTOMATION ORCHESTRATOR")

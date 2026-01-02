@@ -127,8 +127,8 @@ def real_generation(task_id, data):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        # Инициализируем оркестратор
-        orchestrator = YouTubeAutomationOrchestrator(use_remotion=True)
+        # Инициализируем оркестратор (Remotion используется по умолчанию)
+        orchestrator = YouTubeAutomationOrchestrator()
         progress_callback('init', 5, 58)
 
         # Запускаем создание видео
