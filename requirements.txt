@@ -26,7 +26,7 @@ num2words>=0.5.12
 
 # Video & YouTube
 pytube==15.0.0
-moviepy==1.0.3
+# moviepy==1.0.3  # Не работает на Python 3.14, используем Remotion вместо MoviePy
 opencv-python==4.8.1.78
 pillow==10.1.0
 
