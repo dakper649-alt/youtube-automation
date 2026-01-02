@@ -116,23 +116,10 @@ class YouTubeAutomationOrchestrator:
             self.ken_burns = KenBurnsEffect()
             print("   ✅ KenBurnsEffect инициализирован")
 
-            # 6. Выбор рендерера видео
-            print("⚙️  Выбор рендерера видео...")
-            if self.use_remotion:
-                try:
-                    self.video_renderer = RemotionRenderer()
-                    print("   ✅ Remotion рендерер инициализирован (профессиональные эффекты)")
-                except Exception as e:
-                    print(f"   ⚠️  Remotion недоступен: {e}")
-                    print("   🔄 Переключение на MoviePy...")
-                    self.use_remotion = False
-                    from services.video_editor import VideoEditor
-                    self.video_renderer = VideoEditor()
-                    print("   ✅ MoviePy рендерер инициализирован (базовые эффекты)")
-            else:
-                from services.video_editor import VideoEditor
-                self.video_renderer = VideoEditor()
-                print("   ✅ MoviePy рендерер инициализирован (базовые эффекты)")
+            # 6. Инициализируем Remotion рендерер
+            print("⚙️  Инициализация Remotion рендерера...")
+            self.video_renderer = RemotionRenderer()
+            print("   ✅ Remotion рендерер инициализирован (профессиональные эффекты)")
 
             print()
             print("=" * 70)
@@ -512,8 +499,6 @@ class YouTubeAutomationOrchestrator:
             Путь к готовому видео
         """
 
-        from services.video_editor import VideoEditor
-        from services.subtitle_gen import SubtitleGenerator
         from services.output_manager import OutputManager
         from services.telegram_notifier import TelegramNotifier
         import time
@@ -624,59 +609,49 @@ class YouTubeAutomationOrchestrator:
                 on_progress("editing_video")
             print(f"\n[5/5] 🎞️ Финальный монтаж...")
 
-            # Получаем длительность аудио для метаданных
-            from moviepy.editor import AudioFileClip
-            audio_clip = AudioFileClip(audio_path)
-            audio_duration = audio_clip.duration
-            audio_clip.close()
+            # Получаем длительность аудио для метаданных (через ffprobe)
+            import subprocess
+            import json
+            try:
+                result = subprocess.run([
+                    'ffprobe', '-v', 'quiet', '-print_format', 'json',
+                    '-show_format', audio_path
+                ], capture_output=True, text=True)
+                probe_data = json.loads(result.stdout)
+                audio_duration = float(probe_data['format']['duration'])
+            except Exception as e:
+                print(f"   ⚠️  Не удалось получить длительность аудио: {e}")
+                audio_duration = 0  # Fallback
 
-            if self.use_remotion:
-                # Remotion рендер - профессиональные эффекты
-                print("   🎨 Используется Remotion для профессиональных эффектов")
+            # Remotion рендер - профессиональные эффекты
+            print("   🎨 Используется Remotion для профессиональных эффектов")
 
-                # Подготовка сцен для Remotion
-                remotion_scenes = []
+            # Подготовка сцен для Remotion
+            remotion_scenes = []
 
-                for scene in scenes:
-                    remotion_scene = {
-                        'imagePath': scene['path'],
-                        'duration': scene['duration'],
-                        'effect': scene.get('effect_type', 'zoom_in'),
-                        'subtitle': {
-                            'text': scene.get('subtitle_text', ''),
-                            'startTime': scene.get('subtitle_start', 0),
-                            'endTime': scene.get('subtitle_end', scene['duration']),
-                            'highlighted': scene.get('highlight_keywords', False)
-                        } if scene.get('subtitle_text') else None
-                    }
-                    remotion_scenes.append(remotion_scene)
+            for scene in scenes:
+                remotion_scene = {
+                    'imagePath': scene['path'],
+                    'duration': scene['duration'],
+                    'effect': scene.get('effect_type', 'zoom_in'),
+                    'subtitle': {
+                        'text': scene.get('subtitle_text', ''),
+                        'startTime': scene.get('subtitle_start', 0),
+                        'endTime': scene.get('subtitle_end', scene['duration']),
+                        'highlighted': scene.get('highlight_keywords', False)
+                    } if scene.get('subtitle_text') else None
+                }
+                remotion_scenes.append(remotion_scene)
 
-                # Рендер через Remotion
-                output_video = self.video_renderer.render_video(
-                    scenes=remotion_scenes,
-                    audio_path=str(audio_path),
-                    output_path=str(project_dir / "temp" / "video.mp4"),
-                    fps=30,
-                    width=1920,
-                    height=1080
-                )
-
-            else:
-                # MoviePy рендер - базовые эффекты
-                print("   📼 Используется MoviePy для базовых эффектов")
-
-                from services.video_editor import VideoEditor
-                subtitle_gen = SubtitleGenerator()
-                video_editor = VideoEditor(self.ken_burns, subtitle_gen)
-
-                output_video = video_editor.create_video(
-                    scenes=scenes,
-                    audio_path=audio_path,
-                    output_path=str(project_dir / "temp" / "video.mp4"),
-                    subtitle_text=script_text,
-                    subtitle_style=subtitle_style,
-                    add_transitions=True
-                )
+            # Рендер через Remotion
+            output_video = self.video_renderer.render_video(
+                scenes=remotion_scenes,
+                audio_path=str(audio_path),
+                output_path=str(project_dir / "temp" / "video.mp4"),
+                fps=30,
+                width=1920,
+                height=1080
+            )
 
             # Время генерации
             generation_time = time.time() - start_time
