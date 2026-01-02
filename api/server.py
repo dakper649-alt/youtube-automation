@@ -1,6 +1,6 @@
 """
 Flask API для Electron приложения
-Простая версия без MainOrchestrator (пока)
+Полная версия с MainOrchestrator для реальной генерации видео
 """
 
 from flask import Flask, request, jsonify
@@ -8,7 +8,13 @@ from flask_cors import CORS
 import time
 import uuid
 from threading import Thread
-import random
+import sys
+import os
+from pathlib import Path
+import asyncio
+
+# Добавляем путь к backend для импорта
+sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
 
 app = Flask(__name__)
 CORS(app)
@@ -46,8 +52,8 @@ def create_video():
             'data': data
         }
 
-        # Запускаем "генерацию" в отдельном потоке
-        thread = Thread(target=simulate_generation, args=(task_id,))
+        # Запускаем РЕАЛЬНУЮ генерацию в отдельном потоке
+        thread = Thread(target=real_generation, args=(task_id, data))
         thread.daemon = True
         thread.start()
 
@@ -77,57 +83,155 @@ def get_videos():
     # Пока возвращаем пустой список
     return jsonify({'videos': []})
 
-def simulate_generation(task_id):
+def real_generation(task_id, data):
     """
-    Симуляция генерации видео (для тестирования UI)
-    ПОТОМ заменим на реальный MainOrchestrator
+    РЕАЛЬНАЯ генерация видео через MainOrchestrator
     """
     try:
-        steps = [
-            (5, 'Инициализация...', 60),
-            (10, 'Генерация скрипта через Gemini...', 58),
-            (15, 'Скрипт создан, начинаем генерацию изображений...', 55),
-            (25, 'Генерация изображений: 20/80...', 45),
-            (35, 'Генерация изображений: 40/80...', 35),
-            (45, 'Генерация изображений: 60/80...', 25),
-            (55, 'Генерация изображений: 80/80 - завершено!', 20),
-            (60, 'Создание озвучки через ElevenLabs...', 18),
-            (70, 'Применение Ken Burns эффектов...', 12),
-            (80, 'Генерация субтитров...', 8),
-            (90, 'Рендер финального видео через Remotion...', 5),
-            (95, 'Создание SEO метаданных...', 2),
-            (100, 'Готово!', 0),
-        ]
+        from main_orchestrator import YouTubeAutomationOrchestrator
 
-        for progress, step, time_remaining in steps:
+        # Progress callback для обновления прогресса
+        def progress_callback(step, progress, time_estimate=None):
+            """Обновляет прогресс в реальном времени"""
+            step_messages = {
+                'init': 'Инициализация системы...',
+                'generating_script': 'Генерация скрипта через Gemini...',
+                'script_complete': 'Скрипт создан, начинаем генерацию изображений...',
+                'generating_images': 'Генерация изображений через AI...',
+                'images_progress_20': 'Генерация изображений: 20%...',
+                'images_progress_40': 'Генерация изображений: 40%...',
+                'images_progress_60': 'Генерация изображений: 60%...',
+                'images_progress_80': 'Генерация изображений: 80%...',
+                'images_complete': 'Все изображения сгенерированы!',
+                'applying_effects': 'Применение Ken Burns эффектов...',
+                'generating_audio': 'Создание озвучки через ElevenLabs...',
+                'audio_complete': 'Озвучка готова!',
+                'generating_subtitles': 'Генерация субтитров...',
+                'editing_video': 'Рендер финального видео через Remotion...',
+                'finalizing': 'Создание SEO метаданных...',
+                'complete': 'Видео готово!'
+            }
+
+            message = step_messages.get(step, f'{step}...')
+
             tasks[task_id].update({
                 'progress': progress,
-                'step': step,
-                'timeRemaining': time_remaining
+                'step': message,
+                'timeRemaining': time_estimate if time_estimate else max(1, int((100 - progress) * 0.6))
             })
 
-            # Задержка между шагами (имитация работы)
-            time.sleep(2)  # 2 секунды между обновлениями
+        # Инициализация
+        progress_callback('init', 0, 60)
+
+        # Создаём event loop для async функций
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        # Инициализируем оркестратор
+        orchestrator = YouTubeAutomationOrchestrator(use_remotion=True)
+        progress_callback('init', 5, 58)
+
+        # Запускаем создание видео
+        topic = data.get('topic', 'Untitled Video')
+        niche = data.get('niche', 'general')
+        style = data.get('style', 'minimalist_stick_figure')
+        voice = data.get('voice', 'rachel')
+
+        # Создаём прогресс callback который интегрируется с MainOrchestrator
+        def orchestrator_progress(step):
+            """Callback для MainOrchestrator"""
+            # Маппинг этапов MainOrchestrator на проценты
+            progress_map = {
+                'generating_script': 10,
+                'script_complete': 15,
+                'generating_images': 30,
+                'images_complete': 55,
+                'applying_effects': 65,
+                'generating_audio': 75,
+                'audio_complete': 80,
+                'editing_video': 90,
+                'finalizing': 95
+            }
+
+            progress = progress_map.get(step, 0)
+            progress_callback(step, progress)
+
+        # Запускаем полный пайплайн
+        video_path = loop.run_until_complete(
+            orchestrator.create_full_video(
+                topic=topic,
+                niche=niche,
+                style=style,
+                voice=voice,
+                on_progress=orchestrator_progress
+            )
+        )
+
+        # Получаем метаданные видео
+        from moviepy.editor import VideoFileClip
+        try:
+            video_clip = VideoFileClip(video_path)
+            duration_seconds = int(video_clip.duration)
+            duration_str = f"{duration_seconds // 60}:{duration_seconds % 60:02d}"
+            video_clip.close()
+        except:
+            duration_str = "N/A"
 
         # Завершение
+        progress_callback('complete', 100, 0)
+
         tasks[task_id].update({
             'status': 'completed',
             'progress': 100,
             'step': 'Видео готово!',
             'timeRemaining': 0,
             'video': {
-                'title': tasks[task_id]['data']['topic'],
-                'duration': '12:34',
-                'path': '/Users/nikitamoskalev/Desktop/YouTube_Videos/test_video.mp4'
+                'title': topic,
+                'duration': duration_str,
+                'path': video_path
             }
         })
 
+        loop.close()
+
     except Exception as e:
-        print(f"Error in simulate_generation: {e}")
+        print(f"Error in real_generation: {e}")
+        import traceback
+        traceback.print_exc()
+
         tasks[task_id].update({
             'status': 'error',
             'error': str(e)
         })
+
+@app.route('/api/open-file', methods=['POST'])
+def open_file():
+    """Открыть файл в системном приложении по умолчанию"""
+    try:
+        data = request.get_json()
+        file_path = data.get('path')
+
+        if not file_path:
+            return jsonify({'error': 'Path is required'}), 400
+
+        # Открываем файл в зависимости от ОС
+        import platform
+        import subprocess
+
+        system = platform.system()
+
+        if system == 'Darwin':  # macOS
+            subprocess.run(['open', file_path])
+        elif system == 'Windows':
+            os.startfile(file_path)
+        elif system == 'Linux':
+            subprocess.run(['xdg-open', file_path])
+
+        return jsonify({'success': True, 'message': f'Opened {file_path}'})
+
+    except Exception as e:
+        print(f"Error in open_file: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("\n" + "=" * 80)
