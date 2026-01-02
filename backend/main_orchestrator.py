@@ -104,9 +104,8 @@ class YouTubeAutomationOrchestrator:
 
             # 4. Инициализируем Script Generator
             print("⚙️  Инициализация ScriptGenerator...")
-            gemini_key = self.api_key_manager.get_gemini_key()
             self.script_generator = ScriptGenerator(
-                api_key=gemini_key,
+                api_key_manager=self.api_key_manager,
                 provider="gemini"
             )
             print("   ✅ ScriptGenerator инициализирован (Google Gemini)")
