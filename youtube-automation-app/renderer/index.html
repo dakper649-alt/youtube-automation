@@ -109,12 +109,39 @@
       </section>
 
       <!-- Videos List -->
-      <section class="videos-section">
-        <h2>Готовые видео</h2>
-        <div id="videosList" class="videos-grid">
-          <div class="empty-state">
-            <p>Видео ещё не созданы</p>
+      <section class="videos-section" id="videos-section">
+        <div class="section-header">
+          <h2>📁 Готовые видео</h2>
+          <div class="videos-actions">
+            <input type="text" id="search-videos" placeholder="🔍 Поиск по названию...">
+            <select id="filter-status">
+              <option value="all">Все статусы</option>
+              <option value="completed">✅ Готово</option>
+              <option value="processing">⏳ В процессе</option>
+              <option value="error">❌ Ошибка</option>
+            </select>
+            <select id="filter-niche">
+              <option value="all">Все ниши</option>
+              <option value="psychology">🧠 Психология</option>
+              <option value="health">💊 Здоровье</option>
+              <option value="business">💼 Бизнес</option>
+              <option value="education">📚 Образование</option>
+            </select>
+            <button id="sort-date" class="sort-btn">📅 По дате</button>
+            <button id="refresh-videos" class="refresh-btn">🔄</button>
           </div>
+        </div>
+
+        <!-- Список видео -->
+        <div id="videos-list" class="videos-grid">
+          <!-- Видео будут загружены динамически -->
+        </div>
+
+        <!-- Пагинация -->
+        <div class="pagination" id="pagination">
+          <button id="prev-page" disabled>← Назад</button>
+          <span id="page-info">Страница 1 из 1</span>
+          <button id="next-page" disabled>Вперёд →</button>
         </div>
       </section>
     </main>

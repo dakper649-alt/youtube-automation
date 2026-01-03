@@ -738,6 +738,112 @@ def export_stats_json():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ═══════════════════════════════════════════════════════════════
+# VIDEO LIBRARY ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/videos', methods=['GET'])
+def get_videos():
+    """Получить список всех видео"""
+    try:
+        import sqlite3
+
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+        conn = sqlite3.connect(tracker.db_path)
+        cursor = conn.cursor()
+
+        # Получаем все видео
+        cursor.execute('''
+            SELECT id, topic, niche, style, voice, music,
+                   duration_seconds, generation_time_minutes,
+                   success, created_at, video_path
+            FROM videos
+            ORDER BY created_at DESC
+        ''')
+
+        videos = []
+        for row in cursor.fetchall():
+            # Определяем статус на основе поля success
+            if row[8] == 1 or row[8] == '1' or row[8] == True:
+                status = 'completed'
+            elif row[8] == 0 or row[8] == '0' or row[8] == False:
+                status = 'error'
+            else:
+                status = 'processing'
+
+            videos.append({
+                'id': row[0],
+                'topic': row[1],
+                'niche': row[2],
+                'style': row[3],
+                'voice': row[4],
+                'music': row[5],
+                'duration_seconds': row[6] or 0,
+                'generation_time_minutes': row[7] or 0,
+                'status': status,
+                'created_at': row[9],
+                'video_path': row[10],
+                'thumbnail': None  # TODO: генерация превью
+            })
+
+        conn.close()
+
+        print(f"📊 Retrieved {len(videos)} videos")
+        return jsonify(videos)
+
+    except Exception as e:
+        print(f"Error loading videos: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/videos/<int:video_id>', methods=['DELETE'])
+def delete_video(video_id):
+    """Удалить видео"""
+    try:
+        import sqlite3
+
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+        conn = sqlite3.connect(tracker.db_path)
+        cursor = conn.cursor()
+
+        # Получить путь к видео
+        cursor.execute('SELECT video_path FROM videos WHERE id = ?', (video_id,))
+        result = cursor.fetchone()
+
+        if result and result[0]:
+            video_path = result[0]
+
+            # Удалить файл если существует
+            if os.path.exists(video_path):
+                try:
+                    os.remove(video_path)
+                    print(f"🗑️ Deleted file: {video_path}")
+                except Exception as e:
+                    print(f"⚠️ Could not delete file {video_path}: {e}")
+
+            # Удалить из БД
+            cursor.execute('DELETE FROM videos WHERE id = ?', (video_id,))
+            conn.commit()
+            print(f"✅ Deleted video from database: {video_id}")
+
+        conn.close()
+        return jsonify({'success': True, 'message': f'Video {video_id} deleted'})
+
+    except Exception as e:
+        print(f"Error deleting video: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("\n" + "=" * 80)
     print("🚀 FLASK API SERVER")

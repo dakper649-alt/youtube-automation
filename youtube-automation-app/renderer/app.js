@@ -368,4 +368,262 @@ window.addEventListener('load', async () => {
   } catch (error) {
     console.warn('⚠️ Flask server not ready yet:', error.message);
   }
+
+  // Load videos
+  await loadVideos();
 });
+
+// ═══════════════════════════════════════════════════════════════
+// VIDEO LIBRARY
+// ═══════════════════════════════════════════════════════════════
+
+let currentPage = 1;
+const videosPerPage = 12;
+let allVideos = [];
+let filteredVideos = [];
+
+async function loadVideos() {
+  try {
+    const response = await fetch('http://localhost:5001/api/videos');
+    if (!response.ok) throw new Error('Failed to load videos');
+
+    allVideos = await response.json();
+    filteredVideos = allVideos;
+
+    console.log(`📊 Loaded ${allVideos.length} videos`);
+    applyFilters();
+    renderVideos();
+  } catch (error) {
+    console.error('Error loading videos:', error);
+    showEmptyState();
+  }
+}
+
+function applyFilters() {
+  const searchQuery = document.getElementById('search-videos')?.value.toLowerCase() || '';
+  const statusFilter = document.getElementById('filter-status')?.value || 'all';
+  const nicheFilter = document.getElementById('filter-niche')?.value || 'all';
+
+  filteredVideos = allVideos.filter(video => {
+    const matchesSearch = video.topic.toLowerCase().includes(searchQuery);
+    const matchesStatus = statusFilter === 'all' || video.status === statusFilter;
+    const matchesNiche = nicheFilter === 'all' || video.niche === nicheFilter;
+
+    return matchesSearch && matchesStatus && matchesNiche;
+  });
+
+  currentPage = 1;
+  renderVideos();
+}
+
+function renderVideos() {
+  const videosList = document.getElementById('videos-list');
+
+  if (!filteredVideos || filteredVideos.length === 0) {
+    showEmptyState();
+    return;
+  }
+
+  // Pagination
+  const startIndex = (currentPage - 1) * videosPerPage;
+  const endIndex = startIndex + videosPerPage;
+  const videosToShow = filteredVideos.slice(startIndex, endIndex);
+
+  // Render cards
+  videosList.innerHTML = videosToShow.map(video => `
+    <div class="video-card" onclick="openVideo('${video.id}')">
+      <div class="video-thumbnail">
+        ${video.thumbnail
+          ? `<img src="${video.thumbnail}" alt="${video.topic}">`
+          : `<div class="play-icon">▶️</div>`
+        }
+        <span class="video-status ${video.status}">${getStatusText(video.status)}</span>
+        <span class="video-duration">${formatDuration(video.duration_seconds || 0)}</span>
+      </div>
+
+      <div class="video-info">
+        <h3 class="video-title">${escapeHtml(video.topic)}</h3>
+
+        <div class="video-meta">
+          <span>📅 ${formatDate(video.created_at)}</span>
+          <span>🎨 ${video.style || 'N/A'}</span>
+          <span>🎙️ ${video.voice || 'N/A'}</span>
+        </div>
+
+        <div class="video-tags">
+          <span class="video-tag">${video.niche || 'general'}</span>
+          ${video.music && video.music !== 'no_music' ? `<span class="video-tag">🎵 ${video.music}</span>` : ''}
+        </div>
+
+        <div class="video-actions" onclick="event.stopPropagation()">
+          <button class="video-action-btn primary" onclick="playVideo('${escapeHtml(video.video_path || '')}')">
+            ▶️ Смотреть
+          </button>
+          <button class="video-action-btn" onclick="openVideoFolder('${escapeHtml(video.video_path || '')}')">
+            📂 Папка
+          </button>
+          <button class="video-action-btn" onclick="uploadToYouTube('${video.id}')">
+            📤 YouTube
+          </button>
+          <button class="video-action-btn danger" onclick="deleteVideo(${video.id})">
+            🗑️
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  updatePagination();
+}
+
+function showEmptyState() {
+  const videosList = document.getElementById('videos-list');
+  if (!videosList) return;
+
+  videosList.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-icon">🎬</div>
+      <div class="empty-state-text">Видео ещё не созданы</div>
+      <div class="empty-state-hint">Создайте первое видео, чтобы оно появилось здесь</div>
+    </div>
+  `;
+}
+
+function updatePagination() {
+  const totalPages = Math.ceil(filteredVideos.length / videosPerPage);
+
+  const pageInfo = document.getElementById('page-info');
+  const prevBtn = document.getElementById('prev-page');
+  const nextBtn = document.getElementById('next-page');
+
+  if (pageInfo) pageInfo.textContent = `Страница ${currentPage} из ${totalPages || 1}`;
+  if (prevBtn) prevBtn.disabled = currentPage === 1;
+  if (nextBtn) nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+}
+
+// Utilities
+function getStatusText(status) {
+  const statuses = {
+    'completed': '✅ Готово',
+    'processing': '⏳ В процессе',
+    'error': '❌ Ошибка'
+  };
+  return statuses[status] || status;
+}
+
+function formatDuration(seconds) {
+  if (!seconds) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Video Actions
+function openVideo(videoId) {
+  console.log('Opening video:', videoId);
+  // TODO: Modal with details
+  alert(`Видео ID: ${videoId}\nДетали видео (скоро)`);
+}
+
+async function playVideo(videoPath) {
+  if (!videoPath) {
+    alert('Путь к видео не найден');
+    return;
+  }
+
+  try {
+    await fetch('http://localhost:5001/api/open-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: videoPath })
+    });
+    console.log('✅ Video opened:', videoPath);
+  } catch (error) {
+    console.error('Error opening video:', error);
+    alert('Ошибка открытия видео');
+  }
+}
+
+async function openVideoFolder(videoPath) {
+  if (!videoPath) {
+    alert('Путь к видео не найден');
+    return;
+  }
+
+  try {
+    // Extract folder path
+    const folderPath = videoPath.substring(0, videoPath.lastIndexOf('/'));
+
+    await fetch('http://localhost:5001/api/open-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: folderPath })
+    });
+    console.log('✅ Folder opened:', folderPath);
+  } catch (error) {
+    console.error('Error opening folder:', error);
+    alert('Ошибка открытия папки');
+  }
+}
+
+async function uploadToYouTube(videoId) {
+  // TODO: YouTube upload (PHASE 2)
+  alert('📤 Функция автопостинга на YouTube будет добавлена в ФАЗЕ 2');
+}
+
+async function deleteVideo(videoId) {
+  if (!confirm('Вы уверены, что хотите удалить это видео?')) return;
+
+  try {
+    const response = await fetch(`http://localhost:5001/api/videos/${videoId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) throw new Error('Failed to delete');
+
+    console.log('✅ Video deleted:', videoId);
+    await loadVideos(); // Reload list
+  } catch (error) {
+    console.error('Error deleting video:', error);
+    alert('Ошибка удаления видео');
+  }
+}
+
+// Event Listeners
+document.getElementById('search-videos')?.addEventListener('input', applyFilters);
+document.getElementById('filter-status')?.addEventListener('change', applyFilters);
+document.getElementById('filter-niche')?.addEventListener('change', applyFilters);
+document.getElementById('refresh-videos')?.addEventListener('click', loadVideos);
+
+document.getElementById('prev-page')?.addEventListener('click', () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderVideos();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+document.getElementById('next-page')?.addEventListener('click', () => {
+  const totalPages = Math.ceil(filteredVideos.length / videosPerPage);
+  if (currentPage < totalPages) {
+    currentPage++;
+    renderVideos();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+// Auto-refresh every 30 seconds
+setInterval(loadVideos, 30000);
