@@ -53,6 +53,35 @@ const VOICES = {
     'lily': { name: '🌸 Lily', desc: 'Элегантный, утончённый (Culture)' }
 };
 
+// Background Music Configuration (13 tracks)
+const BACKGROUND_MUSIC = {
+    // Психология / Wellness
+    'calm_piano': { name: '🎹 Calm Piano', desc: 'Спокойное фортепиано - психология', tag: '⭐ Рекомендовано', recommended: true },
+    'soft_strings': { name: '🎻 Soft Strings', desc: 'Мягкие струнные - медитация' },
+    'ambient_nature': { name: '🌿 Ambient Nature', desc: 'Звуки природы - релакс' },
+
+    // Бизнес / Мотивация
+    'uplifting_corporate': { name: '💼 Uplifting Corporate', desc: 'Мотивирующая - бизнес', tag: '⭐ Рекомендовано', recommended: true },
+    'inspiring_orchestral': { name: '🎺 Inspiring Orchestral', desc: 'Вдохновляющая - успех' },
+    'modern_tech': { name: '💻 Modern Tech', desc: 'Современная - технологии' },
+
+    // Истории / Драма
+    'cinematic_tension': { name: '🎬 Cinematic Tension', desc: 'Напряжение - триллер', tag: '⭐ Рекомендовано', recommended: true },
+    'emotional_piano': { name: '😢 Emotional Piano', desc: 'Эмоциональная - драма' },
+    'suspense_strings': { name: '🔍 Suspense Strings', desc: 'Саспенс - детектив' },
+
+    // Образование
+    'light_background': { name: '📚 Light Background', desc: 'Лёгкая - обучение', tag: '⭐ Рекомендовано', recommended: true },
+    'neutral_corporate': { name: '📊 Neutral Corporate', desc: 'Нейтральная - презентации' },
+
+    // Энергичное
+    'upbeat_acoustic': { name: '🎸 Upbeat Acoustic', desc: 'Позитивная - лайфстайл' },
+    'energetic_pop': { name: '🎉 Energetic Pop', desc: 'Энергичная - развлечения' },
+
+    // Без музыки
+    'no_music': { name: '🔇 No Music', desc: 'Без фоновой музыки' }
+};
+
 // Initialize UI on load
 function initializeUI() {
     // Populate style dropdown
@@ -99,6 +128,25 @@ function initializeUI() {
     }
 
     console.log('✅ UI initialized with 15 ElevenLabs voices');
+
+    // Populate music dropdown
+    const musicSelect = document.getElementById('music');
+    if (musicSelect) {
+        musicSelect.innerHTML = '';
+
+        for (const [key, data] of Object.entries(BACKGROUND_MUSIC)) {
+            const option = document.createElement('option');
+            option.value = key;
+            const tag = data.tag ? ` ${data.tag}` : '';
+            option.textContent = `${data.name} - ${data.desc}${tag}`;
+            musicSelect.appendChild(option);
+        }
+
+        // Set default music
+        musicSelect.value = 'calm_piano';
+
+        console.log('✅ UI initialized with 13 background music tracks');
+    }
 }
 
 async function playVoicePreview() {
@@ -159,6 +207,7 @@ document.getElementById('createVideoForm').addEventListener('submit', async (e) 
     niche: document.getElementById('niche').value,
     style: document.getElementById('style').value,
     voice: document.getElementById('voice').value,
+    music: document.getElementById('music')?.value || 'no_music',
     length: parseInt(document.getElementById('length').value)
   };
 

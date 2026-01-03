@@ -136,6 +136,7 @@ def real_generation(task_id, data):
         niche = data.get('niche', 'general')
         style = data.get('style', 'minimalist_stick_figure')
         voice = data.get('voice', 'rachel')
+        music = data.get('music', 'no_music')
 
         # Создаём прогресс callback который интегрируется с MainOrchestrator
         def orchestrator_progress(step):
@@ -163,6 +164,7 @@ def real_generation(task_id, data):
                 niche=niche,
                 style=style,
                 voice=voice,
+                background_music=music,
                 on_progress=orchestrator_progress
             )
         )
