@@ -1,6 +1,201 @@
 // UI State
 let isGenerating = false;
 
+// Image Styles Configuration (20 professional styles)
+const IMAGE_STYLES = {
+    'minimalist_stick_figure': { name: '👤 Minimalist Stick Figure', desc: 'Простые фигуры - психология' },
+    'anime': { name: '🎨 Anime Style', desc: 'Яркий аниме - истории' },
+    'watercolor': { name: '🖌️ Watercolor Painting', desc: 'Акварель - wellness' },
+    'oil_painting': { name: '🖼️ Oil Painting', desc: 'Классика - серьёзный контент' },
+    'cyberpunk': { name: '🌃 Cyberpunk', desc: 'Неон - технологии' },
+    'retro_80s': { name: '📼 Retro 80s', desc: 'Ретро - ностальгия' },
+    'pixel_art': { name: '🎮 Pixel Art', desc: 'Пиксели - геймеры' },
+    'comic_book': { name: '💥 Comic Book', desc: 'Комиксы - экшен' },
+    'photorealistic': { name: '📷 Photorealistic', desc: 'Фото - документальное' },
+    'clay_animation': { name: '🧸 Clay Animation', desc: 'Пластилин - дети' },
+    'paper_cutout': { name: '✂️ Paper Cut-out', desc: 'Аппликация - творчество' },
+    'neon_glow': { name: '✨ Neon Glow', desc: 'Неон - ночь' },
+    'abstract_art': { name: '🎭 Abstract Art', desc: 'Абстракция - философия' },
+    'low_poly_3d': { name: '🔷 Low Poly 3D', desc: '3D графика - дизайн' },
+    'sketch_drawing': { name: '✏️ Sketch Drawing', desc: 'Набросок - искусство' },
+    'digital_art': { name: '💻 Digital Art', desc: 'Цифровое - универсально' },
+    'fantasy_art': { name: '🧙 Fantasy Art', desc: 'Фэнтези - магия' },
+    'scifi_concept': { name: '🚀 Sci-Fi Concept', desc: 'Sci-Fi - будущее' },
+    'vintage_poster': { name: '📜 Vintage Poster', desc: 'Винтаж - ретро' },
+    'flat_design': { name: '📊 Flat Design', desc: 'Плоский - бизнес' }
+};
+
+// Voice Configuration (15 ElevenLabs voices)
+const VOICES = {
+    // Психология / Wellness
+    'rachel': { name: '🎭 Rachel', desc: 'Теплый, дружелюбный (Psychology)', tag: '⭐ Лучший для психологии', recommended: true },
+    'charlotte': { name: '👩‍🏫 Charlotte', desc: 'Профессиональный (Education)' },
+    'grace': { name: '🧘‍♀️ Grace', desc: 'Спокойный, мудрый (Meditation)' },
+
+    // Бизнес / Мотивация
+    'adam': { name: '💼 Adam', desc: 'Уверенный, авторитетный (Business)', tag: '⭐ Лучший для бизнеса', recommended: true },
+    'antoni': { name: '🚀 Antoni', desc: 'Энергичный (Entrepreneurship)' },
+    'josh': { name: '⭐ Josh', desc: 'Позитивный, вдохновляющий (Motivation)' },
+    'arnold': { name: '🎙️ Arnold', desc: 'Глубокий, спокойный (Finance)' },
+
+    // Истории / Развлечения
+    'bella': { name: '🎬 Bella', desc: 'Эмоциональный, драматичный (Stories)', tag: '⭐ Лучший для историй', recommended: true },
+    'elli': { name: '🎉 Elli', desc: 'Молодой, игривый (Entertainment)' },
+    'sam': { name: '🎭 Sam', desc: 'Динамичный, захватывающий (Thriller)' },
+
+    // Образование / Наука
+    'domi': { name: '📚 Domi', desc: 'Ясный, образовательный (Tutorial)' },
+    'ethan': { name: '🔬 Ethan', desc: 'Умный, информативный (Science)' },
+
+    // Дополнительные
+    'callum': { name: '📰 Callum', desc: 'Спокойный, надёжный (Documentary)' },
+    'daniel': { name: '🎩 Daniel', desc: 'Британский, благородный (History)' },
+    'lily': { name: '🌸 Lily', desc: 'Элегантный, утончённый (Culture)' }
+};
+
+// Background Music Configuration (13 tracks)
+const BACKGROUND_MUSIC = {
+    // Психология / Wellness
+    'calm_piano': { name: '🎹 Calm Piano', desc: 'Спокойное фортепиано - психология', tag: '⭐ Рекомендовано', recommended: true },
+    'soft_strings': { name: '🎻 Soft Strings', desc: 'Мягкие струнные - медитация' },
+    'ambient_nature': { name: '🌿 Ambient Nature', desc: 'Звуки природы - релакс' },
+
+    // Бизнес / Мотивация
+    'uplifting_corporate': { name: '💼 Uplifting Corporate', desc: 'Мотивирующая - бизнес', tag: '⭐ Рекомендовано', recommended: true },
+    'inspiring_orchestral': { name: '🎺 Inspiring Orchestral', desc: 'Вдохновляющая - успех' },
+    'modern_tech': { name: '💻 Modern Tech', desc: 'Современная - технологии' },
+
+    // Истории / Драма
+    'cinematic_tension': { name: '🎬 Cinematic Tension', desc: 'Напряжение - триллер', tag: '⭐ Рекомендовано', recommended: true },
+    'emotional_piano': { name: '😢 Emotional Piano', desc: 'Эмоциональная - драма' },
+    'suspense_strings': { name: '🔍 Suspense Strings', desc: 'Саспенс - детектив' },
+
+    // Образование
+    'light_background': { name: '📚 Light Background', desc: 'Лёгкая - обучение', tag: '⭐ Рекомендовано', recommended: true },
+    'neutral_corporate': { name: '📊 Neutral Corporate', desc: 'Нейтральная - презентации' },
+
+    // Энергичное
+    'upbeat_acoustic': { name: '🎸 Upbeat Acoustic', desc: 'Позитивная - лайфстайл' },
+    'energetic_pop': { name: '🎉 Energetic Pop', desc: 'Энергичная - развлечения' },
+
+    // Без музыки
+    'no_music': { name: '🔇 No Music', desc: 'Без фоновой музыки' }
+};
+
+// Initialize UI on load
+function initializeUI() {
+    // Populate style dropdown
+    const styleSelect = document.getElementById('style');
+    styleSelect.innerHTML = '';
+
+    for (const [key, data] of Object.entries(IMAGE_STYLES)) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = `${data.name} - ${data.desc}`;
+        styleSelect.appendChild(option);
+    }
+
+    // Set default style
+    styleSelect.value = 'minimalist_stick_figure';
+
+    console.log('✅ UI initialized with 20 image styles');
+
+    // Populate voice dropdown
+    const voiceSelect = document.getElementById('voice');
+    voiceSelect.innerHTML = '';
+
+    for (const [key, data] of Object.entries(VOICES)) {
+        const option = document.createElement('option');
+        option.value = key;
+        const tag = data.tag ? ` ${data.tag}` : '';
+        option.textContent = `${data.name} - ${data.desc}${tag}`;
+        voiceSelect.appendChild(option);
+    }
+
+    // Set default voice
+    voiceSelect.value = 'rachel';
+
+    // Add preview button if not exists
+    const voiceGroup = voiceSelect.parentElement;
+    if (!document.getElementById('previewVoiceBtn')) {
+        const previewButton = document.createElement('button');
+        previewButton.id = 'previewVoiceBtn';
+        previewButton.type = 'button';
+        previewButton.className = 'preview-voice-btn';
+        previewButton.innerHTML = '▶️ Прослушать';
+        previewButton.onclick = playVoicePreview;
+        voiceGroup.appendChild(previewButton);
+    }
+
+    console.log('✅ UI initialized with 15 ElevenLabs voices');
+
+    // Populate music dropdown
+    const musicSelect = document.getElementById('music');
+    if (musicSelect) {
+        musicSelect.innerHTML = '';
+
+        for (const [key, data] of Object.entries(BACKGROUND_MUSIC)) {
+            const option = document.createElement('option');
+            option.value = key;
+            const tag = data.tag ? ` ${data.tag}` : '';
+            option.textContent = `${data.name} - ${data.desc}${tag}`;
+            musicSelect.appendChild(option);
+        }
+
+        // Set default music
+        musicSelect.value = 'calm_piano';
+
+        console.log('✅ UI initialized with 13 background music tracks');
+    }
+}
+
+async function playVoicePreview() {
+    const voiceSelect = document.getElementById('voice');
+    const selectedVoice = voiceSelect.value;
+    const previewButton = document.getElementById('previewVoiceBtn');
+
+    try {
+        previewButton.innerHTML = '⏳ Загрузка...';
+        previewButton.disabled = true;
+
+        // Fetch audio from API
+        const response = await fetch(`http://localhost:5001/api/preview-voice/${selectedVoice}`);
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to generate preview');
+        }
+
+        // Create audio from blob
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+
+        previewButton.innerHTML = '⏸️ Играет...';
+
+        audio.onended = () => {
+            previewButton.innerHTML = '▶️ Прослушать';
+            previewButton.disabled = false;
+            URL.revokeObjectURL(audioUrl);
+        };
+
+        audio.onerror = () => {
+            previewButton.innerHTML = '▶️ Прослушать';
+            previewButton.disabled = false;
+            URL.revokeObjectURL(audioUrl);
+            alert('Ошибка воспроизведения аудио');
+        };
+
+        await audio.play();
+
+    } catch (error) {
+        console.error('Voice preview error:', error);
+        alert('Ошибка прослушки голоса: ' + error.message);
+        previewButton.innerHTML = '▶️ Прослушать';
+        previewButton.disabled = false;
+    }
+}
+
 // Form submission
 document.getElementById('createVideoForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -12,6 +207,7 @@ document.getElementById('createVideoForm').addEventListener('submit', async (e) 
     niche: document.getElementById('niche').value,
     style: document.getElementById('style').value,
     voice: document.getElementById('voice').value,
+    music: document.getElementById('music')?.value || 'no_music',
     length: parseInt(document.getElementById('length').value)
   };
 
@@ -156,6 +352,10 @@ if (window.electronAPI) {
 
 // Check if backend is ready on load
 window.addEventListener('load', async () => {
+  // Initialize UI with 20 styles
+  initializeUI();
+
+  // Check backend health
   try {
     const response = await fetch('http://localhost:5001/api/health');
     if (response.ok) {
