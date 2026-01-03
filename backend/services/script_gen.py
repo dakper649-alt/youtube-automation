@@ -136,9 +136,15 @@ class ScriptGenerator:
     async def _generate_with_huggingface(self, prompt: str) -> str:
         """Генерация через Hugging Face Inference API (БЕСПЛАТНО!)"""
 
+        # Детальное логирование для отладки
+        print(f"   📊 HF Keys статистика:")
+        print(f"      Всего HF ключей загружено: {len(self.key_manager.hf_keys)}")
+
+        if len(self.key_manager.hf_keys) == 0:
+            raise ValueError("❌ Нет доступных Hugging Face ключей!\nДобавьте в .env: HUGGINGFACE_API_KEY_1=hf_...")
+
         hf_key = self.key_manager.get_hf_key()
-        if not hf_key:
-            raise ValueError("Нет доступных Hugging Face ключей!")
+        print(f"      Используется ключ: {hf_key[:8]}...{hf_key[-4:]}")
 
         # Лучшие бесплатные модели для генерации текста
         models = [
@@ -147,8 +153,11 @@ class ScriptGenerator:
             "mistralai/Mistral-7B-Instruct-v0.3"     # Надёжная
         ]
 
+        print(f"      Пробуем {len(models)} модели по порядку...")
+
         for model in models:
             try:
+                print(f"      🔄 Пробую модель: {model.split('/')[-1]}...")
                 url = f"https://api-inference.huggingface.co/models/{model}"
                 headers = {
                     "Authorization": f"Bearer {hf_key}",
@@ -170,11 +179,16 @@ class ScriptGenerator:
 
                     if response.status_code == 503:
                         # Модель загружается, пробуем следующую
-                        print(f"   ⏳ {model.split('/')[-1]} загружается, пробуем другую...")
+                        print(f"         ⏳ {model.split('/')[-1]} загружается, пробуем другую...")
                         continue
 
-                    response.raise_for_status()
+                    if response.status_code != 200:
+                        error_text = response.text[:200]
+                        print(f"         ❌ HTTP {response.status_code}: {error_text}")
+                        continue
+
                     result = response.json()
+                    print(f"         ✅ {model.split('/')[-1]} ответила успешно!")
 
                     # Hugging Face возвращает массив или объект
                     if isinstance(result, list) and len(result) > 0:
@@ -183,7 +197,7 @@ class ScriptGenerator:
                         return result.get('generated_text', '')
 
             except Exception as e:
-                print(f"   ⚠️  {model.split('/')[-1]} failed: {e}")
+                print(f"         ⚠️  {model.split('/')[-1]} failed: {str(e)[:100]}")
                 continue
 
         raise Exception("Все Hugging Face модели недоступны")

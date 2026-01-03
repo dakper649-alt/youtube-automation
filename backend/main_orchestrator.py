@@ -478,6 +478,7 @@ class YouTubeAutomationOrchestrator:
         niche: str,
         style: str = "minimalist_stick_figure",
         voice: str = "rachel",
+        background_music: str = "no_music",
         subtitle_style: str = "highlighted_words",
         on_progress: callable = None
     ) -> str:
@@ -649,6 +650,39 @@ class YouTubeAutomationOrchestrator:
                 width=1920,
                 height=1080
             )
+
+            # Добавление фоновой музыки (если выбрана)
+            if background_music and background_music != 'no_music':
+                print(f"\n🎵 Добавление фоновой музыки ({background_music})...")
+                from config.background_music import get_music_path, get_music_volume
+
+                music_path = get_music_path(background_music)
+                if music_path and os.path.exists(music_path):
+                    volume_db = get_music_volume(background_music)
+                    output_with_music = str(project_dir / "temp" / "video_with_music.mp4")
+
+                    # FFmpeg команда для наложения музыки
+                    import subprocess
+                    cmd = [
+                        'ffmpeg', '-i', output_video, '-i', music_path,
+                        '-filter_complex',
+                        f'[1:a]volume={volume_db}dB,aloop=loop=-1:size=2e+09[music];'
+                        '[0:a][music]amix=inputs=2:duration=first:dropout_transition=2',
+                        '-c:v', 'copy', '-c:a', 'aac',
+                        '-shortest',  # Обрезать музыку по длительности видео
+                        '-y',  # Overwrite output
+                        output_with_music
+                    ]
+
+                    try:
+                        subprocess.run(cmd, check=True, capture_output=True)
+                        output_video = output_with_music
+                        print(f"   ✅ Музыка добавлена ({volume_db} dB)")
+                    except Exception as e:
+                        print(f"   ⚠️  Не удалось добавить музыку: {e}")
+                else:
+                    print(f"   ℹ️  Музыкальный файл не найден: {music_path}")
+                    print(f"   📝 Скачайте музыку из YouTube Audio Library и поместите в backend/assets/music/")
 
             # Время генерации
             generation_time = time.time() - start_time

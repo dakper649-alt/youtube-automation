@@ -63,13 +63,15 @@ class APIKeyManager:
         self.hf_keys = []
         # Из .env (пронумерованные)
         for i in range(1, 201):  # Поддержка до 200 ключей
-            key = os.getenv(f'HF_API_KEY_{i}')
+            key = os.getenv(f'HUGGINGFACE_API_KEY_{i}')
             if key and key != 'your_hf_key_here':
                 self.hf_keys.append(key)
 
         # Или из списка в .env (формат: key1,key2,key3)
         if not self.hf_keys:
-            keys_list = os.getenv('HF_KEYS_LIST', '')
+            keys_list = os.getenv('HUGGINGFACE_KEYS_LIST', '')
+            if not keys_list:
+                keys_list = os.getenv('HF_KEYS_LIST', '')  # Старый формат
             if keys_list:
                 self.hf_keys = [k.strip() for k in keys_list.split(',') if k.strip()]
 
@@ -172,7 +174,7 @@ class APIKeyManager:
         if not self.hf_keys:
             raise ValueError(
                 "Нет доступных Hugging Face ключей!\n"
-                "Добавьте в .env: HF_KEYS_LIST=key1,key2,key3 или HF_API_KEY_1=key1"
+                "Добавьте в .env: HUGGINGFACE_API_KEY_1=key, HUGGINGFACE_API_KEY_2=key..."
             )
         return self._rotate_key('huggingface', self.hf_keys)
 
@@ -753,7 +755,7 @@ class SafeAPIManager(APIKeyManager):
         if not available_keys:
             raise ValueError(
                 "❌ Нет доступных Hugging Face ключей!\n"
-                "Добавьте: HF_API_KEY_1=your_key в .env"
+                "Добавьте в .env: HUGGINGFACE_API_KEY_1=key, HUGGINGFACE_API_KEY_2=key..."
             )
 
         # Выбираем ключ с наименьшим использованием

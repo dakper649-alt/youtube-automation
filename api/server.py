@@ -136,6 +136,7 @@ def real_generation(task_id, data):
         niche = data.get('niche', 'general')
         style = data.get('style', 'minimalist_stick_figure')
         voice = data.get('voice', 'rachel')
+        music = data.get('music', 'no_music')
 
         # Создаём прогресс callback который интегрируется с MainOrchestrator
         def orchestrator_progress(step):
@@ -163,6 +164,7 @@ def real_generation(task_id, data):
                 niche=niche,
                 style=style,
                 voice=voice,
+                background_music=music,
                 on_progress=orchestrator_progress
             )
         )
@@ -236,6 +238,93 @@ def open_file():
 
     except Exception as e:
         print(f"Error in open_file: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/preview-voice/<voice_key>', methods=['GET'])
+def preview_voice(voice_key):
+    """
+    Генерация короткого аудио для прослушки голоса
+
+    Args:
+        voice_key: Ключ голоса (rachel, adam, bella и т.д.)
+
+    Returns:
+        MP3 файл с тестовой озвучкой
+    """
+    try:
+        # Импортируем конфигурацию голосов
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from config.voices import get_voice_id, get_preview_text, ELEVENLABS_VOICES
+
+        # Проверяем, существует ли голос
+        if voice_key not in ELEVENLABS_VOICES:
+            return jsonify({'error': f'Голос "{voice_key}" не найден'}), 404
+
+        voice_id = get_voice_id(voice_key)
+        preview_text = get_preview_text(voice_key)
+
+        print(f"🎤 Preview voice: {voice_key} ({ELEVENLABS_VOICES[voice_key]['name']})")
+
+        # Генерируем короткое аудио через ElevenLabs
+        import requests
+
+        # Получаем API ключ (54 ключа!)
+        from services.api_key_manager import SafeAPIManager
+
+        # Используем безопасный менеджер с ротацией
+        api_manager = SafeAPIManager()
+
+        # Создаём event loop для async функции
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        elevenlabs_key = loop.run_until_complete(api_manager.get_safe_elevenlabs_key())
+        loop.close()
+
+        if not elevenlabs_key:
+            return jsonify({'error': 'ElevenLabs API ключ не найден'}), 500
+
+        # Генерируем аудио
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+        headers = {
+            "xi-api-key": elevenlabs_key,
+            "Content-Type": "application/json"
+        }
+        data = {
+            "text": preview_text,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.75
+            }
+        }
+
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+
+        if response.status_code == 200:
+            # Сохраняем временный файл
+            preview_dir = Path(__file__).parent.parent / 'temp'
+            preview_dir.mkdir(exist_ok=True)
+            preview_path = preview_dir / f'preview_{voice_key}.mp3'
+
+            with open(preview_path, 'wb') as f:
+                f.write(response.content)
+
+            print(f"✅ Preview generated: {preview_path}")
+
+            # Возвращаем аудио файл
+            from flask import send_file
+            return send_file(str(preview_path), mimetype='audio/mpeg')
+        else:
+            error_msg = f'ElevenLabs API error: {response.status_code}'
+            if response.text:
+                error_msg += f' - {response.text[:200]}'
+            print(f"❌ {error_msg}")
+            return jsonify({'error': error_msg}), 500
+
+    except Exception as e:
+        print(f"❌ Error in preview_voice: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
