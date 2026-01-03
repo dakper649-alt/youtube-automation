@@ -1,6 +1,49 @@
 // UI State
 let isGenerating = false;
 
+// Image Styles Configuration (20 professional styles)
+const IMAGE_STYLES = {
+    'minimalist_stick_figure': { name: '👤 Minimalist Stick Figure', desc: 'Простые фигуры - психология' },
+    'anime': { name: '🎨 Anime Style', desc: 'Яркий аниме - истории' },
+    'watercolor': { name: '🖌️ Watercolor Painting', desc: 'Акварель - wellness' },
+    'oil_painting': { name: '🖼️ Oil Painting', desc: 'Классика - серьёзный контент' },
+    'cyberpunk': { name: '🌃 Cyberpunk', desc: 'Неон - технологии' },
+    'retro_80s': { name: '📼 Retro 80s', desc: 'Ретро - ностальгия' },
+    'pixel_art': { name: '🎮 Pixel Art', desc: 'Пиксели - геймеры' },
+    'comic_book': { name: '💥 Comic Book', desc: 'Комиксы - экшен' },
+    'photorealistic': { name: '📷 Photorealistic', desc: 'Фото - документальное' },
+    'clay_animation': { name: '🧸 Clay Animation', desc: 'Пластилин - дети' },
+    'paper_cutout': { name: '✂️ Paper Cut-out', desc: 'Аппликация - творчество' },
+    'neon_glow': { name: '✨ Neon Glow', desc: 'Неон - ночь' },
+    'abstract_art': { name: '🎭 Abstract Art', desc: 'Абстракция - философия' },
+    'low_poly_3d': { name: '🔷 Low Poly 3D', desc: '3D графика - дизайн' },
+    'sketch_drawing': { name: '✏️ Sketch Drawing', desc: 'Набросок - искусство' },
+    'digital_art': { name: '💻 Digital Art', desc: 'Цифровое - универсально' },
+    'fantasy_art': { name: '🧙 Fantasy Art', desc: 'Фэнтези - магия' },
+    'scifi_concept': { name: '🚀 Sci-Fi Concept', desc: 'Sci-Fi - будущее' },
+    'vintage_poster': { name: '📜 Vintage Poster', desc: 'Винтаж - ретро' },
+    'flat_design': { name: '📊 Flat Design', desc: 'Плоский - бизнес' }
+};
+
+// Initialize UI on load
+function initializeUI() {
+    // Populate style dropdown
+    const styleSelect = document.getElementById('style');
+    styleSelect.innerHTML = '';
+
+    for (const [key, data] of Object.entries(IMAGE_STYLES)) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = `${data.name} - ${data.desc}`;
+        styleSelect.appendChild(option);
+    }
+
+    // Set default style
+    styleSelect.value = 'minimalist_stick_figure';
+
+    console.log('✅ UI initialized with 20 image styles');
+}
+
 // Form submission
 document.getElementById('createVideoForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -156,6 +199,10 @@ if (window.electronAPI) {
 
 // Check if backend is ready on load
 window.addEventListener('load', async () => {
+  // Initialize UI with 20 styles
+  initializeUI();
+
+  // Check backend health
   try {
     const response = await fetch('http://localhost:5001/api/health');
     if (response.ok) {

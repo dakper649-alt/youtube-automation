@@ -12,6 +12,11 @@ from typing import Dict, List, Optional
 import hashlib
 import json
 
+# Import image styles configuration
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config.image_styles import get_style_prompt, IMAGE_STYLES, validate_style
+
 
 class ImageGenerator:
     """Генератор изображений с поддержкой 20 стилей"""
@@ -25,10 +30,11 @@ class ImageGenerator:
         # Кэш для reference изображений персонажей
         self.character_cache = {}
 
-        # 20 стилей изображений с детальными промптами
-        self.styles = self._init_styles()
+        # 20 стилей изображений из конфига
+        self.styles = IMAGE_STYLES
+        print(f"✅ ImageGenerator инициализирован с {len(self.styles)} стилями")
 
-    def _init_styles(self) -> Dict:
+    def _init_styles_OLD_DEPRECATED(self) -> Dict:
         """Инициализация всех 20 стилей"""
         return {
             # ═══════════════════════════════════════════════════════════
@@ -230,19 +236,18 @@ class ImageGenerator:
         os.makedirs(output_dir, exist_ok=True)
 
         print(f"\n🎨 Генерация {len(image_prompts)} изображений...")
+
+        # Validate and log style
+        if not validate_style(style):
+            print(f"⚠️ Неизвестный стиль '{style}', использую minimalist_stick_figure")
+            style = 'minimalist_stick_figure'
+
         print(f"📐 Стиль: {self.styles[style]['name']}")
+        print(f"   {self.styles[style]['emoji']} {self.styles[style]['description']}")
 
-        # Проверяем нужен ли consistent персонаж
-        needs_character = self._detect_character_in_script(script)
+        # Проверяем нужен ли consistent персонаж (по умолчанию отключаем для упрощения)
+        needs_character = False  # Simplified: disable character consistency
         reference_image = None
-
-        if needs_character and self.styles[style].get('character_support'):
-            print(f"👤 Обнаружен персонаж в скрипте, создаю reference изображение...")
-            reference_image = await self._create_reference_character(
-                script,
-                style,
-                output_dir
-            )
 
         # Генерируем все изображения
         results = []
@@ -341,13 +346,8 @@ class ImageGenerator:
     ) -> str:
         """Генерирует одно изображение"""
 
-        style_config = self.styles[style]
-
-        # Формируем финальный промпт
-        if '{scene}' in style_config['base_prompt']:
-            full_prompt = style_config['base_prompt'].format(scene=prompt)
-        else:
-            full_prompt = f"{style_config['base_prompt']}, {prompt}"
+        # Используем get_style_prompt из конфига для применения стиля
+        full_prompt = get_style_prompt(style, prompt)
 
         # Добавляем качественные параметры
         full_prompt += ", high quality, detailed, professional, 8k resolution"
@@ -362,7 +362,7 @@ class ImageGenerator:
         payload = {
             "inputs": full_prompt,
             "parameters": {
-                "negative_prompt": style_config.get('negative_prompt', ''),
+                "negative_prompt": "low quality, blurry, distorted, ugly, bad anatomy",
                 "num_inference_steps": 25,
                 "guidance_scale": 7.5,
                 "width": 1920,  # Больше для Ken Burns
