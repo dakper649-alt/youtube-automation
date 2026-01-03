@@ -327,6 +327,274 @@ def preview_voice(voice_key):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ═══════════════════════════════════════════════════════════════
+# SETTINGS ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+SETTINGS_FILE = Path(__file__).parent.parent / 'settings.json'
+
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    """Получить текущие настройки"""
+    try:
+        if SETTINGS_FILE.exists():
+            import json
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+            return jsonify(settings)
+        else:
+            # Возвращаем настройки по умолчанию
+            default_settings = {
+                'outputFolder': '~/Desktop/YouTube_Videos',
+                'autoCleanup': True,
+                'language': 'ru',
+                'defaultStyle': 'minimalist_stick_figure',
+                'defaultVoice': 'rachel',
+                'defaultMusic': 'calm_piano',
+                'musicEnabled': True,
+                'defaultLength': '1200',
+                'telegramToken': '',
+                'telegramChatId': '',
+                'notifyStart': True,
+                'notifyProgress': True,
+                'notifyComplete': True,
+                'notifyError': True,
+                'theme': 'dark',
+                'fontSize': 'medium',
+                'animationsEnabled': True
+            }
+            return jsonify(default_settings)
+    except Exception as e:
+        print(f"Error loading settings: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/save', methods=['POST'])
+def save_settings():
+    """Сохранить настройки в файл"""
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        # Сохраняем настройки
+        import json
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        print(f"✅ Settings saved to {SETTINGS_FILE}")
+
+        return jsonify({'success': True, 'message': 'Settings saved successfully'})
+
+    except Exception as e:
+        print(f"Error saving settings: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/reset', methods=['POST'])
+def reset_settings():
+    """Сбросить настройки к значениям по умолчанию"""
+    try:
+        if SETTINGS_FILE.exists():
+            SETTINGS_FILE.unlink()
+
+        print(f"✅ Settings reset to defaults")
+
+        return jsonify({'success': True, 'message': 'Settings reset successfully'})
+
+    except Exception as e:
+        print(f"Error resetting settings: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/keys', methods=['GET'])
+def get_api_keys():
+    """Получить список API ключей с их статусом"""
+    try:
+        from dotenv import load_dotenv
+        import os
+
+        # Загружаем .env файл
+        env_path = Path(__file__).parent.parent / '.env'
+        load_dotenv(env_path)
+
+        # Считываем HF ключи (123 ключа)
+        hf_keys = []
+        for i in range(1, 124):
+            key = os.getenv(f'HUGGINGFACE_TOKEN_{i}')
+            if key:
+                hf_keys.append({'value': key, 'active': True})
+
+        # Считываем ElevenLabs ключи (54 ключа)
+        elevenlabs_keys = []
+        for i in range(1, 55):
+            key = os.getenv(f'ELEVENLABS_API_KEY_{i}')
+            if key:
+                elevenlabs_keys.append({'value': key, 'active': True})
+
+        # YouTube API ключи
+        youtube_keys = []
+        youtube_key = os.getenv('YOUTUBE_API_KEY')
+        if youtube_key:
+            youtube_keys.append({'value': youtube_key, 'active': True})
+
+        # Groq ключи
+        groq_keys = []
+        groq_key = os.getenv('GROQ_API_KEY')
+        if groq_key:
+            groq_keys.append({'value': groq_key, 'active': True})
+
+        response_data = {
+            'huggingface': {
+                'keys': hf_keys,
+                'active': len(hf_keys),
+                'requests': 0  # TODO: Track usage
+            },
+            'elevenlabs': {
+                'keys': elevenlabs_keys,
+                'active': len(elevenlabs_keys),
+                'requests': 0  # TODO: Track usage
+            },
+            'youtube': {
+                'keys': youtube_keys,
+                'active': len(youtube_keys),
+                'requests': 0  # TODO: Track usage
+            },
+            'groq': {
+                'keys': groq_keys,
+                'active': len(groq_keys),
+                'requests': 0  # TODO: Track usage
+            }
+        }
+
+        return jsonify(response_data)
+
+    except Exception as e:
+        print(f"Error loading API keys: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/keys/add', methods=['POST'])
+def add_api_key():
+    """Добавить новый API ключ"""
+    try:
+        data = request.get_json()
+        service = data.get('service')
+        key = data.get('key')
+
+        if not service or not key:
+            return jsonify({'error': 'Service and key are required'}), 400
+
+        # TODO: Implement adding key to .env file
+        # For now, just return success
+
+        return jsonify({
+            'success': True,
+            'message': f'Key added for {service} (requires manual .env update)'
+        })
+
+    except Exception as e:
+        print(f"Error adding API key: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/keys/test', methods=['POST'])
+def test_api_key():
+    """Протестировать API ключ"""
+    try:
+        data = request.get_json()
+        service = data.get('service')
+        index = data.get('index')
+
+        if service is None or index is None:
+            return jsonify({'error': 'Service and index are required'}), 400
+
+        # TODO: Implement actual API key testing for each service
+        # For now, just return success
+
+        return jsonify({
+            'valid': True,
+            'message': f'Key {index} for {service} is valid (test not implemented yet)'
+        })
+
+    except Exception as e:
+        print(f"Error testing API key: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/keys/delete', methods=['POST'])
+def delete_api_key():
+    """Удалить API ключ"""
+    try:
+        data = request.get_json()
+        service = data.get('service')
+        index = data.get('index')
+
+        if service is None or index is None:
+            return jsonify({'error': 'Service and index are required'}), 400
+
+        # TODO: Implement removing key from .env file
+        # For now, just return success
+
+        return jsonify({
+            'success': True,
+            'message': f'Key {index} removed from {service} (requires manual .env update)'
+        })
+
+    except Exception as e:
+        print(f"Error deleting API key: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/test-telegram', methods=['POST'])
+def test_telegram():
+    """Отправить тестовое сообщение в Telegram"""
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        chat_id = data.get('chatId')
+
+        if not token or not chat_id:
+            return jsonify({'error': 'Token and chatId are required'}), 400
+
+        # Отправляем тестовое сообщение
+        import requests
+
+        url = f'https://api.telegram.org/bot{token}/sendMessage'
+        payload = {
+            'chat_id': chat_id,
+            'text': '🎬 YouTube Automation Studio\n\n✅ Telegram интеграция работает!\n\nВы будете получать уведомления о генерации видео.',
+            'parse_mode': 'HTML'
+        }
+
+        response = requests.post(url, json=payload, timeout=10)
+
+        if response.status_code == 200:
+            return jsonify({'success': True, 'message': 'Test message sent successfully'})
+        else:
+            error_data = response.json()
+            error_msg = error_data.get('description', 'Unknown error')
+            return jsonify({'error': f'Telegram API error: {error_msg}'}), 400
+
+    except Exception as e:
+        print(f"Error testing Telegram: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/choose-folder', methods=['POST'])
+def choose_folder():
+    """Открыть диалог выбора папки"""
+    try:
+        # TODO: Implement folder selection dialog
+        # This would require integration with Electron's dialog API
+        # For now, just return a placeholder
+
+        return jsonify({
+            'success': False,
+            'message': 'Folder selection requires Electron integration'
+        })
+
+    except Exception as e:
+        print(f"Error choosing folder: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("\n" + "=" * 80)
     print("🚀 FLASK API SERVER")

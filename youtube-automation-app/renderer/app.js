@@ -340,7 +340,7 @@ function openVideo(path) {
 }
 
 function openSettings() {
-  alert('⚙️ Настройки\n\nДля настройки API ключей отредактируйте файл .env в корневой директории проекта.');
+  window.location.href = 'settings.html';
 }
 
 // Backend ready listener
