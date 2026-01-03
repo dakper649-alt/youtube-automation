@@ -25,6 +25,34 @@ const IMAGE_STYLES = {
     'flat_design': { name: '📊 Flat Design', desc: 'Плоский - бизнес' }
 };
 
+// Voice Configuration (15 ElevenLabs voices)
+const VOICES = {
+    // Психология / Wellness
+    'rachel': { name: '🎭 Rachel', desc: 'Теплый, дружелюбный (Psychology)', tag: '⭐ Лучший для психологии', recommended: true },
+    'charlotte': { name: '👩‍🏫 Charlotte', desc: 'Профессиональный (Education)' },
+    'grace': { name: '🧘‍♀️ Grace', desc: 'Спокойный, мудрый (Meditation)' },
+
+    // Бизнес / Мотивация
+    'adam': { name: '💼 Adam', desc: 'Уверенный, авторитетный (Business)', tag: '⭐ Лучший для бизнеса', recommended: true },
+    'antoni': { name: '🚀 Antoni', desc: 'Энергичный (Entrepreneurship)' },
+    'josh': { name: '⭐ Josh', desc: 'Позитивный, вдохновляющий (Motivation)' },
+    'arnold': { name: '🎙️ Arnold', desc: 'Глубокий, спокойный (Finance)' },
+
+    // Истории / Развлечения
+    'bella': { name: '🎬 Bella', desc: 'Эмоциональный, драматичный (Stories)', tag: '⭐ Лучший для историй', recommended: true },
+    'elli': { name: '🎉 Elli', desc: 'Молодой, игривый (Entertainment)' },
+    'sam': { name: '🎭 Sam', desc: 'Динамичный, захватывающий (Thriller)' },
+
+    // Образование / Наука
+    'domi': { name: '📚 Domi', desc: 'Ясный, образовательный (Tutorial)' },
+    'ethan': { name: '🔬 Ethan', desc: 'Умный, информативный (Science)' },
+
+    // Дополнительные
+    'callum': { name: '📰 Callum', desc: 'Спокойный, надёжный (Documentary)' },
+    'daniel': { name: '🎩 Daniel', desc: 'Британский, благородный (History)' },
+    'lily': { name: '🌸 Lily', desc: 'Элегантный, утончённый (Culture)' }
+};
+
 // Initialize UI on load
 function initializeUI() {
     // Populate style dropdown
@@ -42,6 +70,82 @@ function initializeUI() {
     styleSelect.value = 'minimalist_stick_figure';
 
     console.log('✅ UI initialized with 20 image styles');
+
+    // Populate voice dropdown
+    const voiceSelect = document.getElementById('voice');
+    voiceSelect.innerHTML = '';
+
+    for (const [key, data] of Object.entries(VOICES)) {
+        const option = document.createElement('option');
+        option.value = key;
+        const tag = data.tag ? ` ${data.tag}` : '';
+        option.textContent = `${data.name} - ${data.desc}${tag}`;
+        voiceSelect.appendChild(option);
+    }
+
+    // Set default voice
+    voiceSelect.value = 'rachel';
+
+    // Add preview button if not exists
+    const voiceGroup = voiceSelect.parentElement;
+    if (!document.getElementById('previewVoiceBtn')) {
+        const previewButton = document.createElement('button');
+        previewButton.id = 'previewVoiceBtn';
+        previewButton.type = 'button';
+        previewButton.className = 'preview-voice-btn';
+        previewButton.innerHTML = '▶️ Прослушать';
+        previewButton.onclick = playVoicePreview;
+        voiceGroup.appendChild(previewButton);
+    }
+
+    console.log('✅ UI initialized with 15 ElevenLabs voices');
+}
+
+async function playVoicePreview() {
+    const voiceSelect = document.getElementById('voice');
+    const selectedVoice = voiceSelect.value;
+    const previewButton = document.getElementById('previewVoiceBtn');
+
+    try {
+        previewButton.innerHTML = '⏳ Загрузка...';
+        previewButton.disabled = true;
+
+        // Fetch audio from API
+        const response = await fetch(`http://localhost:5001/api/preview-voice/${selectedVoice}`);
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to generate preview');
+        }
+
+        // Create audio from blob
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+
+        previewButton.innerHTML = '⏸️ Играет...';
+
+        audio.onended = () => {
+            previewButton.innerHTML = '▶️ Прослушать';
+            previewButton.disabled = false;
+            URL.revokeObjectURL(audioUrl);
+        };
+
+        audio.onerror = () => {
+            previewButton.innerHTML = '▶️ Прослушать';
+            previewButton.disabled = false;
+            URL.revokeObjectURL(audioUrl);
+            alert('Ошибка воспроизведения аудио');
+        };
+
+        await audio.play();
+
+    } catch (error) {
+        console.error('Voice preview error:', error);
+        alert('Ошибка прослушки голоса: ' + error.message);
+        previewButton.innerHTML = '▶️ Прослушать';
+        previewButton.disabled = false;
+    }
 }
 
 // Form submission
