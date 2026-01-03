@@ -595,6 +595,67 @@ def choose_folder():
         print(f"Error choosing folder: {e}")
         return jsonify({'error': str(e)}), 500
 
+# ═══════════════════════════════════════════════════════════════
+# STATS ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Получить статистику генерации видео"""
+    try:
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+        stats = tracker.get_stats()
+
+        return jsonify(stats)
+
+    except Exception as e:
+        print(f"Error loading stats: {e}")
+        import traceback
+        traceback.print_exc()
+
+        # Возвращаем демо данные если tracker не работает
+        demo_stats = {
+            'overview': {
+                'totalVideos': 0,
+                'totalTimeMinutes': 0,
+                'successRate': 0,
+                'avgDurationSeconds': 0
+            },
+            'videosByDay': [],
+            'styleUsage': {},
+            'voiceUsage': {},
+            'timeOfDay': {
+                'morning': 0,
+                'afternoon': 0,
+                'evening': 0,
+                'night': 0
+            },
+            'apiUsage': {
+                'huggingface': {'used': 0, 'limit': None},
+                'elevenlabs': {'used': 0, 'limit': 10000},
+                'youtube': {'used': 0, 'limit': 10000},
+                'groq': {'used': 0, 'limit': 14400}
+            },
+            'achievements': {
+                'first_video': False,
+                'ten_videos': False,
+                'hundred_videos': False,
+                'three_per_day': False,
+                'ten_per_week': False,
+                'thirty_day_streak': False
+            },
+            'goals': {
+                'weekly': {'current': 0, 'target': 10},
+                'monthly': {'current': 0, 'target': 40}
+            }
+        }
+
+        return jsonify(demo_stats)
+
 if __name__ == '__main__':
     print("\n" + "=" * 80)
     print("🚀 FLASK API SERVER")

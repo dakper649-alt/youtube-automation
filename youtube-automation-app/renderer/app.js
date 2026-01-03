@@ -343,6 +343,10 @@ function openSettings() {
   window.location.href = 'settings.html';
 }
 
+function openStats() {
+  window.location.href = 'stats.html';
+}
+
 // Backend ready listener
 if (window.electronAPI) {
   window.electronAPI.onBackendReady(() => {
