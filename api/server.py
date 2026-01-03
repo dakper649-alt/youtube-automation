@@ -656,6 +656,88 @@ def get_stats():
 
         return jsonify(demo_stats)
 
+@app.route('/api/stats/export/csv', methods=['GET'])
+def export_stats_csv():
+    """Экспорт статистики в CSV"""
+    try:
+        import csv
+        import io
+        from flask import Response
+
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+
+        # Подключаемся к базе данных
+        import sqlite3
+        conn = sqlite3.connect(tracker.db_path)
+        cursor = conn.cursor()
+
+        # Получаем все видео
+        cursor.execute('''
+            SELECT topic, style, voice, music, duration_seconds,
+                   generation_time_minutes, success, created_at
+            FROM videos
+            ORDER BY created_at DESC
+        ''')
+        rows = cursor.fetchall()
+        conn.close()
+
+        # Создаём CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Заголовки
+        writer.writerow([
+            'Тема', 'Стиль', 'Голос', 'Музыка', 'Длительность (сек)',
+            'Время генерации (мин)', 'Успех', 'Создано'
+        ])
+
+        # Данные
+        writer.writerows(rows)
+
+        # Возвращаем файл
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': 'attachment;filename=youtube_automation_stats.csv'}
+        )
+
+    except Exception as e:
+        print(f"Error exporting CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stats/export/json', methods=['GET'])
+def export_stats_json():
+    """Экспорт статистики в JSON"""
+    try:
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+        stats = tracker.get_stats()
+
+        # Возвращаем JSON файл
+        from flask import Response
+        import json
+
+        return Response(
+            json.dumps(stats, indent=2, ensure_ascii=False),
+            mimetype='application/json',
+            headers={'Content-Disposition': 'attachment;filename=youtube_automation_stats.json'}
+        )
+
+    except Exception as e:
+        print(f"Error exporting JSON: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("\n" + "=" * 80)
     print("🚀 FLASK API SERVER")
