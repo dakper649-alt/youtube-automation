@@ -480,6 +480,7 @@ class YouTubeAutomationOrchestrator:
         voice: str = "rachel",
         background_music: str = "no_music",
         subtitle_style: str = "highlighted_words",
+        use_ollama: bool = True,
         on_progress: callable = None
     ) -> str:
         """
@@ -491,6 +492,7 @@ class YouTubeAutomationOrchestrator:
             style: Стиль изображений
             voice: Голос для озвучки
             subtitle_style: Стиль субтитров
+            use_ollama: Использовать локальную Ollama для генерации скриптов
             on_progress: Callback для обновления прогресса
 
         Returns:
@@ -539,7 +541,8 @@ class YouTubeAutomationOrchestrator:
             script_result = await self.script_generator.generate_script(
                 topic=topic,
                 target_length=1000,
-                language='ru'
+                language='ru',
+                use_ollama=use_ollama
             )
 
             script_text = script_result['script']

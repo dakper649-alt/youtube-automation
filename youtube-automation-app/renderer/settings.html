@@ -171,6 +171,20 @@
                         <option value="1500">~15 мин (1500 слов)</option>
                     </select>
                 </div>
+
+                <div class="setting-group">
+                    <label>🖥️ Локальная генерация скриптов (Ollama)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="ollama-enabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <p class="hint">
+                        Использовать Ollama для бесплатной локальной генерации скриптов (Llama 3.1 8B)
+                        <br>
+                        ⚡ Быстро, бесплатно, приватно | ⚠️ Требуется установка: <code>brew install ollama</code>
+                    </p>
+                    <button id="test-ollama-btn" class="test-button">🧪 Проверить Ollama</button>
+                </div>
             </div>
 
             <!-- TELEGRAM -->

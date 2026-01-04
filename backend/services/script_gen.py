@@ -53,30 +53,107 @@ class ScriptGenerator:
         else:
             raise ScriptGeneratorError(f"Неизвестный provider: {provider}")
 
+    async def _generate_with_ollama(self, prompt: str) -> str:
+        """
+        Генерация через локальную Ollama модель
+
+        Требования:
+        1. Ollama должна быть установлена: brew install ollama
+        2. Модель скачана: ollama pull llama3.1:8b
+        3. Сервер запущен: ollama serve (в фоне)
+        """
+
+        print("   🖥️ Генерация через локальную Ollama (Llama 3.1 8B)...")
+
+        try:
+            # Ollama API endpoint (локальный)
+            url = "http://localhost:11434/api/generate"
+
+            payload = {
+                "model": "llama3.1:8b",
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.7,
+                    "num_predict": 4000,  # Максимум токенов
+                }
+            }
+
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(url, json=payload)
+
+                if response.status_code == 200:
+                    result = response.json()
+                    generated_text = result.get('response', '')
+
+                    if generated_text:
+                        print(f"   ✅ Ollama сгенерировала {len(generated_text)} символов")
+                        return generated_text
+                    else:
+                        raise Exception("Ollama вернула пустой ответ")
+                else:
+                    raise Exception(f"Ollama API error: {response.status_code}")
+
+        except httpx.ConnectError:
+            raise Exception(
+                "Не удалось подключиться к Ollama!\n"
+                "Убедитесь что:\n"
+                "1. Ollama установлена: brew install ollama\n"
+                "2. Сервер запущен: ollama serve\n"
+                "3. Модель скачана: ollama pull llama3.1:8b"
+            )
+        except Exception as e:
+            raise Exception(f"Ошибка Ollama: {str(e)}")
+
     async def generate_script(
         self,
         topic: str,
         target_length: int = 1000,
         language: str = 'ru',
-        niche: str = 'psychology'
+        niche: str = 'psychology',
+        use_ollama: bool = True
     ) -> Dict:
         """
-        Генерация сценария
+        Генерация сценария с приоритетом на Ollama
+
+        Приоритет провайдеров:
+        1. Ollama (локально, бесплатно) - если use_ollama=True
+        2. Hugging Face (123 ключа)
+        3. Groq (14,400 запросов/день)
+        4. Gemini 2.0 Flash
+        5. OpenAI GPT-4o-mini
 
         Args:
             topic: Тема видео
             target_length: Целевая длина в словах
             language: Язык ('ru' или 'en')
             niche: Ниша
+            use_ollama: Использовать локальную Ollama (по умолчанию True)
 
         Returns:
-            Dict с ключами: hook, script, cta, title_suggestions, word_count
+            Dict с ключами: hook, script, cta, title_suggestions, word_count, provider, model
         """
 
         prompt = self._build_prompt(topic, target_length, language, niche)
 
-        # Пробуем провайдеры по порядку: HF -> Groq -> Gemini -> OpenAI
+        # Пробуем провайдеры по порядку: Ollama -> HF -> Groq -> Gemini -> OpenAI
         errors = []
+
+        # 0. Попытка через Ollama (если включена)
+        if use_ollama:
+            try:
+                print("🖥️ Пробуем Ollama (локальная Llama 3.1 8B)...")
+                content = await self._generate_with_ollama(prompt)
+                result = self._parse_response(content)
+                result['word_count'] = len(result['script'].split())
+                result['provider'] = 'ollama'
+                result['model'] = 'llama3.1:8b'
+                print("✅ Скрипт сгенерирован через Ollama (БЕСПЛАТНО!)")
+                return result
+            except Exception as e:
+                print(f"⚠️  Ollama не доступна: {e}")
+                print(f"   🔄 Переключаемся на облачные API...")
+                errors.append(f"Ollama: {e}")
 
         # 1. Попытка через Hugging Face (БЕСПЛАТНО! 125 ключей!)
         try:
@@ -84,6 +161,8 @@ class ScriptGenerator:
             content = await self._generate_with_huggingface(prompt)
             result = self._parse_response(content)
             result['word_count'] = len(result['script'].split())
+            result['provider'] = 'huggingface'
+            result['model'] = 'llama-3.1-8b'
             print("✅ Скрипт сгенерирован через Hugging Face")
             return result
         except Exception as e:
@@ -96,6 +175,8 @@ class ScriptGenerator:
             content = await self._generate_with_groq(prompt)
             result = self._parse_response(content)
             result['word_count'] = len(result['script'].split())
+            result['provider'] = 'groq'
+            result['model'] = 'llama-3.1-70b'
             print("✅ Скрипт сгенерирован через Groq")
             return result
         except Exception as e:
@@ -108,6 +189,8 @@ class ScriptGenerator:
             content = await self._generate_with_gemini(prompt)
             result = self._parse_response(content)
             result['word_count'] = len(result['script'].split())
+            result['provider'] = 'gemini'
+            result['model'] = 'gemini-2.0-flash'
             print("✅ Скрипт сгенерирован через Gemini")
             return result
         except Exception as e:
@@ -124,6 +207,8 @@ class ScriptGenerator:
             content = await self._generate_with_openai_direct(prompt, openai_key)
             result = self._parse_response(content)
             result['word_count'] = len(result['script'].split())
+            result['provider'] = 'openai'
+            result['model'] = 'gpt-4o-mini'
             print("✅ Скрипт сгенерирован через OpenAI")
             return result
         except Exception as e:

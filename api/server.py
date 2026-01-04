@@ -137,6 +137,7 @@ def real_generation(task_id, data):
         style = data.get('style', 'minimalist_stick_figure')
         voice = data.get('voice', 'rachel')
         music = data.get('music', 'no_music')
+        use_ollama = data.get('use_ollama', True)  # По умолчанию используем Ollama
 
         # Создаём прогресс callback который интегрируется с MainOrchestrator
         def orchestrator_progress(step):
@@ -165,6 +166,7 @@ def real_generation(task_id, data):
                 style=style,
                 voice=voice,
                 background_music=music,
+                use_ollama=use_ollama,  # Передаём параметр Ollama
                 on_progress=orchestrator_progress
             )
         )

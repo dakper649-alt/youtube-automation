@@ -89,6 +89,23 @@
             </div>
           </div>
 
+          <!-- Ollama Option -->
+          <div class="form-group ollama-option">
+            <label class="checkbox-label">
+              <input type="checkbox" id="use-ollama" name="use-ollama" checked>
+              <span class="checkbox-text">
+                🖥️ Использовать локальную модель (Ollama - БЕСПЛАТНО)
+              </span>
+            </label>
+            <p class="hint">
+              💡 Ollama генерирует скрипты локально на вашем Mac без интернета.
+              <br>
+              ⚡ Быстрее чем облачные API и абсолютно бесплатно!
+              <br>
+              ⚠️ Требуется установка: <code>brew install ollama && ollama pull llama3.1:8b</code>
+            </p>
+          </div>
+
           <button type="submit" class="btn-primary">
             🚀 Создать видео
           </button>

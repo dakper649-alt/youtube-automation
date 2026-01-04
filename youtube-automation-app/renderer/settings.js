@@ -424,6 +424,34 @@ async function testTelegram() {
     }
 }
 
+async function testOllama() {
+    try {
+        // Проверяем доступность Ollama напрямую
+        const response = await fetch('http://localhost:11434/api/tags');
+
+        if (response.ok) {
+            const data = await response.json();
+
+            if (data.models && data.models.length > 0) {
+                const models = data.models.map(m => m.name).join(', ');
+                alert(`✅ Ollama работает!\n\nДоступные модели:\n${models}\n\n💡 Совет: Для работы рекомендуется модель llama3.1:8b`);
+            } else {
+                alert('⚠️ Ollama работает, но нет установленных моделей.\n\nУстановите модель:\nollama pull llama3.1:8b');
+            }
+        } else {
+            alert('❌ Ollama не отвечает.\n\nПроверьте:\n1. Сервер запущен: ollama serve\n2. Порт 11434 доступен');
+        }
+    } catch (error) {
+        console.error('Error testing Ollama:', error);
+
+        if (error.message && error.message.includes('Failed to fetch')) {
+            alert('❌ Ollama не установлена или не запущена.\n\nШаги для установки:\n1. brew install ollama\n2. ollama serve\n3. ollama pull llama3.1:8b\n\nПодробнее: backend/services/OLLAMA_README.md');
+        } else {
+            alert('❌ Ошибка подключения к Ollama: ' + error.message);
+        }
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // THEME SWITCHING
 // ═══════════════════════════════════════════════════════════════
@@ -614,6 +642,12 @@ function setupEventListeners() {
     const testTelegramBtn = document.getElementById('test-telegram-btn');
     if (testTelegramBtn) {
         testTelegramBtn.addEventListener('click', testTelegram);
+    }
+
+    // Test Ollama button
+    const testOllamaBtn = document.getElementById('test-ollama-btn');
+    if (testOllamaBtn) {
+        testOllamaBtn.addEventListener('click', testOllama);
     }
 
     // Choose folder button

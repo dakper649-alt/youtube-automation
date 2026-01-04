@@ -208,7 +208,8 @@ document.getElementById('createVideoForm').addEventListener('submit', async (e) 
     style: document.getElementById('style').value,
     voice: document.getElementById('voice').value,
     music: document.getElementById('music')?.value || 'no_music',
-    length: parseInt(document.getElementById('length').value)
+    length: parseInt(document.getElementById('length').value),
+    use_ollama: document.getElementById('use-ollama')?.checked ?? true
   };
 
   startVideoGeneration(formData);
