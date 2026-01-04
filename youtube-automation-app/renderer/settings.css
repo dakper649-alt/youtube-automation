@@ -613,3 +613,209 @@ body.light-theme .hint {
 body.light-theme .loading {
     color: #777;
 }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TELEGRAM INTEGRATION STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Статус подключения */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+}
+
+.status-indicator.online {
+    background: #4ade80;
+    box-shadow: 0 0 10px #4ade80;
+}
+
+.status-indicator.offline {
+    background: #f87171;
+    box-shadow: 0 0 10px #f87171;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Кнопка помощи */
+.help-btn {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: rgba(102, 126, 234, 0.2);
+    border: 1px solid rgba(102, 126, 234, 0.5);
+    border-radius: 8px;
+    color: #a5b4fc;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.help-btn:hover {
+    background: rgba(102, 126, 234, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Чекбоксы с описанием */
+.checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.checkbox-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.checkbox-title {
+    color: white;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.checkbox-desc {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+}
+
+/* Редактор шаблонов */
+.template-editor {
+    margin-bottom: 20px;
+}
+
+.template-editor label {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+
+.template-editor textarea {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    resize: vertical;
+}
+
+.template-editor textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Secondary button */
+.secondary-button {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.secondary-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Команды бота */
+.commands-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.command-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.command-item code {
+    padding: 4px 12px;
+    background: rgba(102, 126, 234, 0.2);
+    border-radius: 6px;
+    color: #a5b4fc;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.command-item span {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+/* Кнопка теста */
+.test-button {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+}
+
+.test-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.test-button:active {
+    transform: translateY(0);
+}
+
+/* Setting group h3 */
+.setting-group h3 {
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #fff;
+}

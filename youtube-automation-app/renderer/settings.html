@@ -191,39 +191,141 @@
             <div id="telegram-tab" class="tab-panel">
                 <h2>📱 Telegram уведомления</h2>
 
+                <!-- Статус подключения -->
+                <div class="connection-status" id="telegram-status">
+                    <span class="status-indicator offline"></span>
+                    <span>Не подключено</span>
+                </div>
+
+                <!-- Настройки бота -->
                 <div class="setting-group">
                     <label>🤖 Bot Token</label>
                     <input type="password" id="telegram-token" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz">
                     <p class="hint">Получить у @BotFather в Telegram</p>
+                    <button class="help-btn" onclick="showTelegramHelp('token')">❓ Как получить?</button>
                 </div>
 
                 <div class="setting-group">
                     <label>💬 Chat ID</label>
-                    <input type="text" id="telegram-chat-id" placeholder="301238133">
-                    <p class="hint">Ваш Telegram Chat ID (получить у @userinfobot)</p>
+                    <input type="text" id="telegram-chat-id" placeholder="301238133" value="301238133">
+                    <p class="hint">Ваш Telegram Chat ID</p>
+                    <button class="help-btn" onclick="showTelegramHelp('chatid')">❓ Как получить?</button>
                 </div>
 
+                <!-- Типы уведомлений -->
                 <div class="setting-group">
-                    <label>🔔 Типы уведомлений</label>
+                    <h3>🔔 Типы уведомлений</h3>
+
                     <label class="checkbox-item">
                         <input type="checkbox" id="notify-start" checked>
-                        🎬 Старт генерации
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">🎬 Старт генерации</span>
+                            <span class="checkbox-desc">Уведомление при начале создания видео</span>
+                        </div>
                     </label>
+
                     <label class="checkbox-item">
                         <input type="checkbox" id="notify-progress" checked>
-                        📊 Обновления прогресса
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">📊 Обновления прогресса</span>
+                            <span class="checkbox-desc">Каждые 20% прогресса (5 сообщений на видео)</span>
+                        </div>
                     </label>
+
                     <label class="checkbox-item">
                         <input type="checkbox" id="notify-complete" checked>
-                        ✅ Завершение генерации
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">✅ Завершение генерации</span>
+                            <span class="checkbox-desc">Уведомление с превью когда видео готово</span>
+                        </div>
                     </label>
+
                     <label class="checkbox-item">
                         <input type="checkbox" id="notify-error" checked>
-                        ❌ Ошибки
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">❌ Ошибки</span>
+                            <span class="checkbox-desc">Уведомления об ошибках с деталями</span>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-youtube" checked>
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">📤 Постинг на YouTube</span>
+                            <span class="checkbox-desc">Уведомление после загрузки на YouTube</span>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-stats">
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">📊 Статистика дня</span>
+                            <span class="checkbox-desc">Ежедневная сводка в 20:00</span>
+                        </div>
                     </label>
                 </div>
 
-                <button id="test-telegram-btn" class="test-button">📤 Отправить тестовое сообщение</button>
+                <!-- Шаблоны сообщений -->
+                <div class="setting-group">
+                    <h3>💬 Шаблоны сообщений</h3>
+                    <p class="hint">Настройте как будут выглядеть уведомления</p>
+
+                    <div class="template-editor">
+                        <label>Старт генерации:</label>
+                        <textarea id="template-start" rows="3">🎬 Началась генерация видео
+📝 Тема: {topic}
+⏱️ Примерное время: {estimated_time}</textarea>
+                    </div>
+
+                    <div class="template-editor">
+                        <label>Завершение:</label>
+                        <textarea id="template-complete" rows="4">✅ Видео готово!
+📝 Тема: {topic}
+⏱️ Время генерации: {generation_time}
+🎬 Файл: {video_path}</textarea>
+                    </div>
+
+                    <div class="template-editor">
+                        <label>Ошибка:</label>
+                        <textarea id="template-error" rows="3">❌ Ошибка при создании видео
+📝 Тема: {topic}
+🔴 Ошибка: {error_message}</textarea>
+                    </div>
+
+                    <button class="secondary-button" onclick="resetTemplates()">🔄 Сбросить шаблоны</button>
+                </div>
+
+                <!-- Тестовая отправка -->
+                <div class="setting-group">
+                    <h3>🧪 Тестирование</h3>
+                    <button id="test-telegram-btn" class="test-button">📤 Отправить тестовое сообщение</button>
+                    <p class="hint">Проверьте работу Telegram уведомлений</p>
+                </div>
+
+                <!-- Команды бота (информация) -->
+                <div class="setting-group">
+                    <h3>🤖 Команды бота</h3>
+                    <p class="hint">После настройки будут доступны команды:</p>
+                    <div class="commands-list">
+                        <div class="command-item">
+                            <code>/status</code>
+                            <span>Текущий статус генерации</span>
+                        </div>
+                        <div class="command-item">
+                            <code>/videos</code>
+                            <span>Список готовых видео</span>
+                        </div>
+                        <div class="command-item">
+                            <code>/stats</code>
+                            <span>Статистика за сегодня</span>
+                        </div>
+                        <div class="command-item">
+                            <code>/cancel</code>
+                            <span>Отменить текущую генерацию</span>
+                        </div>
+                    </div>
+                    <p class="hint">📝 Команды будут работать в ФАЗЕ 2</p>
+                </div>
             </div>
 
             <!-- ОФОРМЛЕНИЕ -->

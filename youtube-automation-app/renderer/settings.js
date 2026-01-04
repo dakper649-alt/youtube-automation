@@ -29,6 +29,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Populate dropdowns from app.js constants
     populateDropdowns();
+
+    // Check Telegram status if on Telegram tab
+    if (document.getElementById('telegram-tab')?.classList.contains('active')) {
+        checkTelegramStatus();
+    }
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -53,6 +58,11 @@ function setupTabs() {
             const panel = document.getElementById(`${tabName}-tab`);
             if (panel) {
                 panel.classList.add('active');
+            }
+
+            // Check Telegram status when switching to Telegram tab
+            if (tabName === 'telegram') {
+                setTimeout(() => checkTelegramStatus(), 500);
             }
         });
     });
@@ -414,14 +424,109 @@ async function testTelegram() {
         const result = await response.json();
 
         if (result.success) {
-            alert('✅ Тестовое сообщение отправлено успешно!');
+            alert('✅ Тестовое сообщение отправлено успешно!\n\nПроверьте Telegram.');
+            updateTelegramStatus(true, 'Подключено');
         } else {
             alert('❌ Ошибка отправки: ' + (result.error || 'Неизвестная ошибка'));
+            updateTelegramStatus(false, 'Ошибка');
         }
     } catch (error) {
         console.error('Error testing Telegram:', error);
         alert('❌ Ошибка подключения к серверу');
+        updateTelegramStatus(false, 'Не доступно');
     }
+}
+
+// Проверка статуса Telegram
+async function checkTelegramStatus() {
+    const token = document.getElementById('telegram-token').value;
+    const chatId = document.getElementById('telegram-chat-id').value;
+
+    if (!token || !chatId) {
+        updateTelegramStatus(false, 'Не настроено');
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:5001/api/telegram/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, chatId })
+        });
+
+        if (response.ok) {
+            updateTelegramStatus(true, 'Подключено');
+        } else {
+            updateTelegramStatus(false, 'Ошибка подключения');
+        }
+    } catch (error) {
+        updateTelegramStatus(false, 'Не доступно');
+    }
+}
+
+function updateTelegramStatus(online, text) {
+    const statusEl = document.getElementById('telegram-status');
+    if (!statusEl) return;
+
+    const indicator = statusEl.querySelector('.status-indicator');
+    const textEl = statusEl.querySelector('span:last-child');
+
+    if (indicator) {
+        indicator.className = `status-indicator ${online ? 'online' : 'offline'}`;
+    }
+    if (textEl) {
+        textEl.textContent = text;
+    }
+}
+
+// Помощь по получению токенов
+function showTelegramHelp(type) {
+    if (type === 'token') {
+        alert(
+            '🤖 Как получить Bot Token:\n\n' +
+            '1. Найдите @BotFather в Telegram\n' +
+            '2. Отправьте команду /newbot\n' +
+            '3. Придумайте имя бота\n' +
+            '4. Придумайте username (должен заканчиваться на bot)\n' +
+            '5. Скопируйте полученный токен\n\n' +
+            'Пример токена:\n' +
+            '123456789:ABCdefGHIjklMNOpqrsTUVwxyz'
+        );
+    } else if (type === 'chatid') {
+        alert(
+            '💬 Как получить Chat ID:\n\n' +
+            '1. Найдите @userinfobot в Telegram\n' +
+            '2. Отправьте команду /start\n' +
+            '3. Бот покажет ваш Chat ID\n' +
+            '4. Скопируйте число\n\n' +
+            'Пример Chat ID:\n' +
+            '301238133\n\n' +
+            '✅ У вас уже есть: 301238133'
+        );
+    }
+}
+
+// Сброс шаблонов
+function resetTemplates() {
+    if (!confirm('Сбросить все шаблоны на стандартные?')) return;
+
+    const startTemplate = document.getElementById('template-start');
+    const completeTemplate = document.getElementById('template-complete');
+    const errorTemplate = document.getElementById('template-error');
+
+    if (startTemplate) {
+        startTemplate.value = '🎬 Началась генерация видео\n📝 Тема: {topic}\n⏱️ Примерное время: {estimated_time}';
+    }
+
+    if (completeTemplate) {
+        completeTemplate.value = '✅ Видео готово!\n📝 Тема: {topic}\n⏱️ Время генерации: {generation_time}\n🎬 Файл: {video_path}';
+    }
+
+    if (errorTemplate) {
+        errorTemplate.value = '❌ Ошибка при создании видео\n📝 Тема: {topic}\n🔴 Ошибка: {error_message}';
+    }
+
+    alert('✅ Шаблоны сброшены на стандартные');
 }
 
 async function testOllama() {
@@ -661,3 +766,12 @@ function setupEventListeners() {
 
     console.log('✅ Event listeners setup complete');
 }
+
+// ═══════════════════════════════════════════════════════════════
+// EXPOSE FUNCTIONS TO GLOBAL SCOPE
+// ═══════════════════════════════════════════════════════════════
+
+window.showTelegramHelp = showTelegramHelp;
+window.resetTemplates = resetTemplates;
+
+console.log('✅ Settings JS loaded with Telegram integration');
