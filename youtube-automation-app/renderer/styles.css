@@ -38,6 +38,7 @@ body {
 }
 
 .btn-stats,
+.btn-youtube,
 .btn-settings {
   background: #f3f4f6;
   border: none;
@@ -49,6 +50,7 @@ body {
 }
 
 .btn-stats:hover,
+.btn-youtube:hover,
 .btn-settings:hover {
   background: #e5e7eb;
   transform: translateY(-2px);

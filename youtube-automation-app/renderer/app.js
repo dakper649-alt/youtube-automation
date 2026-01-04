@@ -348,6 +348,10 @@ function openStats() {
   window.location.href = 'stats.html';
 }
 
+function openYouTubeUpload() {
+  window.location.href = 'youtube-upload.html';
+}
+
 // Backend ready listener
 if (window.electronAPI) {
   window.electronAPI.onBackendReady(() => {
