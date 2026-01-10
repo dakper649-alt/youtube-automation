@@ -92,17 +92,95 @@ function updateScenarioStats() {
 }
 
 function detectLanguage(text) {
-    if (!text || text.trim().length === 0) {
-        return '-';
-    }
+    if (!text || text.length < 10) return '-';
 
-    // Count Cyrillic vs Latin characters
+    // Подсчёт символов разных алфавитов
     const cyrillicCount = (text.match(/[а-яёА-ЯЁ]/g) || []).length;
     const latinCount = (text.match(/[a-zA-Z]/g) || []).length;
+    const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+    const japaneseCount = (text.match(/[\u3040-\u309f\u30a0-\u30ff]/g) || []).length;
+    const koreanCount = (text.match(/[\uac00-\ud7af]/g) || []).length;
+    const arabicCount = (text.match(/[\u0600-\u06ff]/g) || []).length;
+    const hebrewCount = (text.match(/[\u0590-\u05ff]/g) || []).length;
+    const thaiCount = (text.match(/[\u0e00-\u0e7f]/g) || []).length;
+    const hindiCount = (text.match(/[\u0900-\u097f]/g) || []).length;
 
-    if (cyrillicCount > latinCount) {
+    // Определение языка по максимальному количеству специфичных символов
+    const counts = {
+        'Китайский (ZH)': chineseCount,
+        'Японский (JA)': japaneseCount,
+        'Корейский (KO)': koreanCount,
+        'Арабский (AR)': arabicCount,
+        'Иврит (HE)': hebrewCount,
+        'Тайский (TH)': thaiCount,
+        'Хинди (HI)': hindiCount
+    };
+
+    // Найти максимум среди неевропейских языков
+    let maxLang = null;
+    let maxCount = 0;
+
+    for (const [lang, count] of Object.entries(counts)) {
+        if (count > maxCount && count > 5) { // минимум 5 символов
+            maxCount = count;
+            maxLang = lang;
+        }
+    }
+
+    // Если найден неевропейский язык - вернуть его
+    if (maxLang) {
+        return maxLang;
+    }
+
+    // Проверка кириллицы (русский/украинский)
+    if (cyrillicCount > latinCount && cyrillicCount > 10) {
+        // Украинские буквы (і, ї, є, ґ)
+        const ukrainianChars = (text.match(/[іїєґІЇЄҐ]/g) || []).length;
+        if (ukrainianChars > 2) {
+            return 'Украинский (UK)';
+        }
         return 'Русский (RU)';
-    } else if (latinCount > 0) {
+    }
+
+    // Проверка латиницы (европейские языки)
+    if (latinCount > 10) {
+        // Испанский (ñ, á, é, í, ó, ú, ¿, ¡)
+        const spanishChars = (text.match(/[ñáéíóúÑÁÉÍÓÚ¿¡]/g) || []).length;
+        if (spanishChars > 2) {
+            return 'Испанский (ES)';
+        }
+
+        // Французский (è, é, ê, ë, à, â, ç, ù, î, ô)
+        const frenchChars = (text.match(/[èéêëàâçùîôÈÉÊËÀÂÇÙÎÔ]/g) || []).length;
+        if (frenchChars > 2) {
+            return 'Французский (FR)';
+        }
+
+        // Немецкий (ä, ö, ü, ß)
+        const germanChars = (text.match(/[äöüßÄÖÜ]/g) || []).length;
+        if (germanChars > 2) {
+            return 'Немецкий (DE)';
+        }
+
+        // Португальский (ã, õ, â, ê, ô, ç)
+        const portugueseChars = (text.match(/[ãõâêôçÃÕÂÊÔÇ]/g) || []).length;
+        if (portugueseChars > 2) {
+            return 'Португальский (PT)';
+        }
+
+        // Итальянский (à, è, é, ì, ò, ù)
+        const italianChars = (text.match(/[àèéìòùÀÈÉÌÒÙ]/g) || []).length;
+        if (italianChars > 2) {
+            return 'Итальянский (IT)';
+        }
+
+        // Польский (ą, ć, ę, ł, ń, ó, ś, ź, ż)
+        const polishChars = (text.match(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g) || []).length;
+        if (polishChars > 2) {
+            return 'Польский (PL)';
+        }
+
+        // По умолчанию - английский
         return 'Английский (EN)';
     }
 
