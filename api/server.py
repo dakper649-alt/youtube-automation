@@ -137,6 +137,7 @@ def real_generation(task_id, data):
         style = data.get('style', 'minimalist_stick_figure')
         voice = data.get('voice', 'rachel')
         music = data.get('music', 'no_music')
+        use_ollama = data.get('use_ollama', True)  # По умолчанию используем Ollama
 
         # Создаём прогресс callback который интегрируется с MainOrchestrator
         def orchestrator_progress(step):
@@ -165,6 +166,7 @@ def real_generation(task_id, data):
                 style=style,
                 voice=voice,
                 background_music=music,
+                use_ollama=use_ollama,  # Передаём параметр Ollama
                 on_progress=orchestrator_progress
             )
         )
@@ -326,6 +328,605 @@ def preview_voice(voice_key):
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
+# ═══════════════════════════════════════════════════════════════
+# SETTINGS ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+SETTINGS_FILE = Path(__file__).parent.parent / 'settings.json'
+
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    """Получить текущие настройки"""
+    try:
+        if SETTINGS_FILE.exists():
+            import json
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+            return jsonify(settings)
+        else:
+            # Возвращаем настройки по умолчанию
+            default_settings = {
+                'outputFolder': '~/Desktop/YouTube_Videos',
+                'autoCleanup': True,
+                'language': 'ru',
+                'defaultStyle': 'minimalist_stick_figure',
+                'defaultVoice': 'rachel',
+                'defaultMusic': 'calm_piano',
+                'musicEnabled': True,
+                'defaultLength': '1200',
+                'telegramToken': '',
+                'telegramChatId': '',
+                'notifyStart': True,
+                'notifyProgress': True,
+                'notifyComplete': True,
+                'notifyError': True,
+                'theme': 'dark',
+                'fontSize': 'medium',
+                'animationsEnabled': True
+            }
+            return jsonify(default_settings)
+    except Exception as e:
+        print(f"Error loading settings: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/save', methods=['POST'])
+def save_settings():
+    """Сохранить настройки в файл"""
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        # Сохраняем настройки
+        import json
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        print(f"✅ Settings saved to {SETTINGS_FILE}")
+
+        return jsonify({'success': True, 'message': 'Settings saved successfully'})
+
+    except Exception as e:
+        print(f"Error saving settings: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/reset', methods=['POST'])
+def reset_settings():
+    """Сбросить настройки к значениям по умолчанию"""
+    try:
+        if SETTINGS_FILE.exists():
+            SETTINGS_FILE.unlink()
+
+        print(f"✅ Settings reset to defaults")
+
+        return jsonify({'success': True, 'message': 'Settings reset successfully'})
+
+    except Exception as e:
+        print(f"Error resetting settings: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/keys', methods=['GET'])
+def get_api_keys():
+    """Получить список API ключей с их статусом"""
+    try:
+        from dotenv import load_dotenv
+        import os
+
+        # Загружаем .env файл
+        env_path = Path(__file__).parent.parent / '.env'
+        load_dotenv(env_path)
+
+        # Считываем HF ключи (123 ключа)
+        hf_keys = []
+        for i in range(1, 124):
+            key = os.getenv(f'HUGGINGFACE_TOKEN_{i}')
+            if key:
+                hf_keys.append({'value': key, 'active': True})
+
+        # Считываем ElevenLabs ключи (54 ключа)
+        elevenlabs_keys = []
+        for i in range(1, 55):
+            key = os.getenv(f'ELEVENLABS_API_KEY_{i}')
+            if key:
+                elevenlabs_keys.append({'value': key, 'active': True})
+
+        # YouTube API ключи
+        youtube_keys = []
+        youtube_key = os.getenv('YOUTUBE_API_KEY')
+        if youtube_key:
+            youtube_keys.append({'value': youtube_key, 'active': True})
+
+        # Groq ключи
+        groq_keys = []
+        groq_key = os.getenv('GROQ_API_KEY')
+        if groq_key:
+            groq_keys.append({'value': groq_key, 'active': True})
+
+        response_data = {
+            'huggingface': {
+                'keys': hf_keys,
+                'active': len(hf_keys),
+                'requests': 0  # TODO: Track usage
+            },
+            'elevenlabs': {
+                'keys': elevenlabs_keys,
+                'active': len(elevenlabs_keys),
+                'requests': 0  # TODO: Track usage
+            },
+            'youtube': {
+                'keys': youtube_keys,
+                'active': len(youtube_keys),
+                'requests': 0  # TODO: Track usage
+            },
+            'groq': {
+                'keys': groq_keys,
+                'active': len(groq_keys),
+                'requests': 0  # TODO: Track usage
+            }
+        }
+
+        return jsonify(response_data)
+
+    except Exception as e:
+        print(f"Error loading API keys: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/keys/add', methods=['POST'])
+def add_api_key():
+    """Добавить новый API ключ"""
+    try:
+        data = request.get_json()
+        service = data.get('service')
+        key = data.get('key')
+
+        if not service or not key:
+            return jsonify({'error': 'Service and key are required'}), 400
+
+        # TODO: Implement adding key to .env file
+        # For now, just return success
+
+        return jsonify({
+            'success': True,
+            'message': f'Key added for {service} (requires manual .env update)'
+        })
+
+    except Exception as e:
+        print(f"Error adding API key: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/keys/test', methods=['POST'])
+def test_api_key():
+    """Протестировать API ключ"""
+    try:
+        data = request.get_json()
+        service = data.get('service')
+        index = data.get('index')
+
+        if service is None or index is None:
+            return jsonify({'error': 'Service and index are required'}), 400
+
+        # TODO: Implement actual API key testing for each service
+        # For now, just return success
+
+        return jsonify({
+            'valid': True,
+            'message': f'Key {index} for {service} is valid (test not implemented yet)'
+        })
+
+    except Exception as e:
+        print(f"Error testing API key: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/settings/keys/delete', methods=['POST'])
+def delete_api_key():
+    """Удалить API ключ"""
+    try:
+        data = request.get_json()
+        service = data.get('service')
+        index = data.get('index')
+
+        if service is None or index is None:
+            return jsonify({'error': 'Service and index are required'}), 400
+
+        # TODO: Implement removing key from .env file
+        # For now, just return success
+
+        return jsonify({
+            'success': True,
+            'message': f'Key {index} removed from {service} (requires manual .env update)'
+        })
+
+    except Exception as e:
+        print(f"Error deleting API key: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/test-telegram', methods=['POST'])
+def test_telegram():
+    """Отправить тестовое сообщение в Telegram"""
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        chat_id = data.get('chatId')
+
+        if not token or not chat_id:
+            return jsonify({'error': 'Token and chatId are required'}), 400
+
+        # Отправляем тестовое сообщение
+        import requests
+
+        url = f'https://api.telegram.org/bot{token}/sendMessage'
+        payload = {
+            'chat_id': chat_id,
+            'text': '🎬 YouTube Automation Studio\n\n✅ Telegram интеграция работает!\n\nВы будете получать уведомления о генерации видео.',
+            'parse_mode': 'HTML'
+        }
+
+        response = requests.post(url, json=payload, timeout=10)
+
+        if response.status_code == 200:
+            return jsonify({'success': True, 'message': 'Test message sent successfully'})
+        else:
+            error_data = response.json()
+            error_msg = error_data.get('description', 'Unknown error')
+            return jsonify({'error': f'Telegram API error: {error_msg}'}), 400
+
+    except Exception as e:
+        print(f"Error testing Telegram: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/choose-folder', methods=['POST'])
+def choose_folder():
+    """Открыть диалог выбора папки"""
+    try:
+        # TODO: Implement folder selection dialog
+        # This would require integration with Electron's dialog API
+        # For now, just return a placeholder
+
+        return jsonify({
+            'success': False,
+            'message': 'Folder selection requires Electron integration'
+        })
+
+    except Exception as e:
+        print(f"Error choosing folder: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ═══════════════════════════════════════════════════════════════
+# STATS ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Получить статистику генерации видео"""
+    try:
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+        stats = tracker.get_stats()
+
+        return jsonify(stats)
+
+    except Exception as e:
+        print(f"Error loading stats: {e}")
+        import traceback
+        traceback.print_exc()
+
+        # Возвращаем демо данные если tracker не работает
+        demo_stats = {
+            'overview': {
+                'totalVideos': 0,
+                'totalTimeMinutes': 0,
+                'successRate': 0,
+                'avgDurationSeconds': 0
+            },
+            'videosByDay': [],
+            'styleUsage': {},
+            'voiceUsage': {},
+            'timeOfDay': {
+                'morning': 0,
+                'afternoon': 0,
+                'evening': 0,
+                'night': 0
+            },
+            'apiUsage': {
+                'huggingface': {'used': 0, 'limit': None},
+                'elevenlabs': {'used': 0, 'limit': 10000},
+                'youtube': {'used': 0, 'limit': 10000},
+                'groq': {'used': 0, 'limit': 14400}
+            },
+            'achievements': {
+                'first_video': False,
+                'ten_videos': False,
+                'hundred_videos': False,
+                'three_per_day': False,
+                'ten_per_week': False,
+                'thirty_day_streak': False
+            },
+            'goals': {
+                'weekly': {'current': 0, 'target': 10},
+                'monthly': {'current': 0, 'target': 40}
+            }
+        }
+
+        return jsonify(demo_stats)
+
+@app.route('/api/stats/export/csv', methods=['GET'])
+def export_stats_csv():
+    """Экспорт статистики в CSV"""
+    try:
+        import csv
+        import io
+        from flask import Response
+
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+
+        # Подключаемся к базе данных
+        import sqlite3
+        conn = sqlite3.connect(tracker.db_path)
+        cursor = conn.cursor()
+
+        # Получаем все видео
+        cursor.execute('''
+            SELECT topic, style, voice, music, duration_seconds,
+                   generation_time_minutes, success, created_at
+            FROM videos
+            ORDER BY created_at DESC
+        ''')
+        rows = cursor.fetchall()
+        conn.close()
+
+        # Создаём CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Заголовки
+        writer.writerow([
+            'Тема', 'Стиль', 'Голос', 'Музыка', 'Длительность (сек)',
+            'Время генерации (мин)', 'Успех', 'Создано'
+        ])
+
+        # Данные
+        writer.writerows(rows)
+
+        # Возвращаем файл
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': 'attachment;filename=youtube_automation_stats.csv'}
+        )
+
+    except Exception as e:
+        print(f"Error exporting CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stats/export/json', methods=['GET'])
+def export_stats_json():
+    """Экспорт статистики в JSON"""
+    try:
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+        stats = tracker.get_stats()
+
+        # Возвращаем JSON файл
+        from flask import Response
+        import json
+
+        return Response(
+            json.dumps(stats, indent=2, ensure_ascii=False),
+            mimetype='application/json',
+            headers={'Content-Disposition': 'attachment;filename=youtube_automation_stats.json'}
+        )
+
+    except Exception as e:
+        print(f"Error exporting JSON: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+# ═══════════════════════════════════════════════════════════════
+# VIDEO LIBRARY ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/videos', methods=['GET'])
+def get_videos():
+    """Получить список всех видео"""
+    try:
+        import sqlite3
+
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+        conn = sqlite3.connect(tracker.db_path)
+        cursor = conn.cursor()
+
+        # Получаем все видео
+        cursor.execute('''
+            SELECT id, topic, niche, style, voice, music,
+                   duration_seconds, generation_time_minutes,
+                   success, created_at, video_path
+            FROM videos
+            ORDER BY created_at DESC
+        ''')
+
+        videos = []
+        for row in cursor.fetchall():
+            # Определяем статус на основе поля success
+            if row[8] == 1 or row[8] == '1' or row[8] == True:
+                status = 'completed'
+            elif row[8] == 0 or row[8] == '0' or row[8] == False:
+                status = 'error'
+            else:
+                status = 'processing'
+
+            videos.append({
+                'id': row[0],
+                'topic': row[1],
+                'niche': row[2],
+                'style': row[3],
+                'voice': row[4],
+                'music': row[5],
+                'duration_seconds': row[6] or 0,
+                'generation_time_minutes': row[7] or 0,
+                'status': status,
+                'created_at': row[9],
+                'video_path': row[10],
+                'thumbnail': None  # TODO: генерация превью
+            })
+
+        conn.close()
+
+        print(f"📊 Retrieved {len(videos)} videos")
+        return jsonify(videos)
+
+    except Exception as e:
+        print(f"Error loading videos: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/videos/<int:video_id>', methods=['DELETE'])
+def delete_video(video_id):
+    """Удалить видео"""
+    try:
+        import sqlite3
+
+        # Импортируем stats_tracker
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.stats_tracker import StatsTracker
+
+        tracker = StatsTracker()
+        conn = sqlite3.connect(tracker.db_path)
+        cursor = conn.cursor()
+
+        # Получить путь к видео
+        cursor.execute('SELECT video_path FROM videos WHERE id = ?', (video_id,))
+        result = cursor.fetchone()
+
+        if result and result[0]:
+            video_path = result[0]
+
+            # Удалить файл если существует
+            if os.path.exists(video_path):
+                try:
+                    os.remove(video_path)
+                    print(f"🗑️ Deleted file: {video_path}")
+                except Exception as e:
+                    print(f"⚠️ Could not delete file {video_path}: {e}")
+
+            # Удалить из БД
+            cursor.execute('DELETE FROM videos WHERE id = ?', (video_id,))
+            conn.commit()
+            print(f"✅ Deleted video from database: {video_id}")
+
+        conn.close()
+        return jsonify({'success': True, 'message': f'Video {video_id} deleted'})
+
+    except Exception as e:
+        print(f"Error deleting video: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+# ═══════════════════════════════════════════════════════════════
+# REFERENCE IMAGES (для блока изображений)
+# ═══════════════════════════════════════════════════════════════
+
+from werkzeug.utils import secure_filename
+
+# Папка для референсов
+REFERENCES_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'backend', 'assets', 'references')
+os.makedirs(REFERENCES_FOLDER, exist_ok=True)
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/api/upload-reference', methods=['POST'])
+def upload_reference():
+    """Загрузка референса (персонаж или стиль)"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Нет файла'}), 400
+
+        file = request.files['file']
+        ref_type = request.form.get('type', 'character')
+
+        if file.filename == '':
+            return jsonify({'error': 'Файл не выбран'}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'Неподдерживаемый формат'}), 400
+
+        # Генерировать уникальное имя
+        file_ext = file.filename.rsplit('.', 1)[1].lower()
+        unique_id = str(uuid.uuid4())
+        filename = f"{ref_type}_{unique_id}.{file_ext}"
+
+        # Сохранить файл
+        filepath = os.path.join(REFERENCES_FOLDER, filename)
+        file.save(filepath)
+
+        print(f"✅ Reference uploaded: {filename}")
+
+        return jsonify({
+            'success': True,
+            'id': unique_id,
+            'path': filepath,
+            'filename': filename
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"❌ Error uploading reference: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/delete-reference/<reference_id>', methods=['DELETE'])
+def delete_reference(reference_id):
+    """Удаление референса"""
+    try:
+        # Найти файлы с этим ID
+        deleted = False
+        for filename in os.listdir(REFERENCES_FOLDER):
+            if reference_id in filename:
+                filepath = os.path.join(REFERENCES_FOLDER, filename)
+                os.remove(filepath)
+                print(f"🗑️ Reference deleted: {filename}")
+                deleted = True
+
+        if not deleted:
+            return jsonify({'error': 'Файл не найден'}), 404
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        print(f"❌ Error deleting reference: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ═══════════════════════════════════════════════════════════════
 
 if __name__ == '__main__':
     print("\n" + "=" * 80)

@@ -480,6 +480,7 @@ class YouTubeAutomationOrchestrator:
         voice: str = "rachel",
         background_music: str = "no_music",
         subtitle_style: str = "highlighted_words",
+        use_ollama: bool = True,
         on_progress: callable = None
     ) -> str:
         """
@@ -491,6 +492,7 @@ class YouTubeAutomationOrchestrator:
             style: Стиль изображений
             voice: Голос для озвучки
             subtitle_style: Стиль субтитров
+            use_ollama: Использовать локальную Ollama для генерации скриптов
             on_progress: Callback для обновления прогресса
 
         Returns:
@@ -539,7 +541,8 @@ class YouTubeAutomationOrchestrator:
             script_result = await self.script_generator.generate_script(
                 topic=topic,
                 target_length=1000,
-                language='ru'
+                language='ru',
+                use_ollama=use_ollama
             )
 
             script_text = script_result['script']
@@ -726,9 +729,44 @@ class YouTubeAutomationOrchestrator:
             print(f"📁 Папка проекта: {project_dir}")
             print(f"🎬 Видео: {final_path}")
 
+            # Логирование статистики
+            try:
+                from services.stats_tracker import StatsTracker
+                stats_tracker = StatsTracker()
+                stats_tracker.log_video(
+                    topic=topic,
+                    style=style,
+                    voice=voice,
+                    music=background_music,
+                    duration_seconds=int(audio_duration),
+                    generation_time_minutes=int(generation_time / 60),
+                    success=True,
+                    video_path=str(final_path)
+                )
+                print(f"📊 Статистика обновлена")
+            except Exception as stats_error:
+                print(f"⚠️  Не удалось обновить статистику: {stats_error}")
+
             return str(final_path)
 
         except Exception as e:
+            # Логирование неудачной попытки
+            try:
+                from services.stats_tracker import StatsTracker
+                stats_tracker = StatsTracker()
+                stats_tracker.log_video(
+                    topic=topic,
+                    style=style,
+                    voice=voice,
+                    music=background_music,
+                    duration_seconds=0,
+                    generation_time_minutes=int((time.time() - start_time) / 60),
+                    success=False,
+                    video_path=None
+                )
+            except Exception as stats_error:
+                print(f"⚠️  Не удалось обновить статистику: {stats_error}")
+
             telegram.notify_error(topic, "unknown", str(e))
             print(f"\n❌ ОШИБКА: {e}")
             raise

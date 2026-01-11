@@ -1,124 +1,362 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube Automation Studio</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Automation Studio</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
-      <h1>🎬 YouTube Automation Studio</h1>
-      <div class="header-actions">
-        <button class="btn-settings" onclick="openSettings()">⚙️ Настройки</button>
-      </div>
-    </header>
+    <div class="app-container">
 
-    <!-- Main Content -->
-    <main class="app-main">
-      <!-- Create Video Section -->
-      <section class="create-video-section">
-        <h2>Создать новое видео</h2>
-        <form id="createVideoForm">
-          <div class="form-group">
-            <label for="topic">Тема видео:</label>
-            <input
-              type="text"
-              id="topic"
-              placeholder="Как токсичные люди изучают ваши привычки"
-              required
-            >
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="niche">Ниша:</label>
-              <select id="niche">
-                <option value="psychology">Психология</option>
-                <option value="health">Здоровье</option>
-                <option value="business">Бизнес</option>
-                <option value="education">Образование</option>
-              </select>
+        <!-- ХЕДЕР -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">🎬</span>
+                <span class="logo-text">YouTube Automation Studio</span>
             </div>
-
-            <div class="form-group">
-              <label for="style">Стиль изображений:</label>
-              <select id="style">
-                <option value="minimalist_stick_figure">Minimalist Stick Figure</option>
-                <option value="realistic_photo">Realistic Photo</option>
-                <option value="anime_style">Anime Style</option>
-                <option value="watercolor">Watercolor</option>
-              </select>
+            <div class="project-info-compact">
+                <span id="current-project-name">Новый проект</span>
             </div>
-          </div>
+        </header>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="voice">Голос:</label>
-              <select id="voice">
-                <option value="rachel">Rachel (Female, US)</option>
-                <option value="adam">Adam (Male, US)</option>
-                <option value="bella">Bella (Female, UK)</option>
-              </select>
-            </div>
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
+        <div class="main-layout">
 
-            <div class="form-group">
-              <label for="music">🎵 Фоновая музыка:</label>
-              <select id="music">
-                <option value="calm_piano">🎹 Calm Piano</option>
-                <option value="no_music">🔇 No Music</option>
-              </select>
-            </div>
-          </div>
+            <!-- ЛЕВАЯ НАВИГАЦИЯ -->
+            <nav class="sidebar">
+                <button class="nav-btn active" data-section="generation">
+                    <span class="nav-icon">🎬</span>
+                    <span class="nav-label">Генерация</span>
+                </button>
+                <button class="nav-btn" data-section="queue">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-label">Очередь</span>
+                </button>
+                <button class="nav-btn" data-section="export">
+                    <span class="nav-icon">📤</span>
+                    <span class="nav-label">Выгрузка</span>
+                </button>
+                <button class="nav-btn" data-section="stats">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Статистика</span>
+                </button>
+                <button class="nav-btn" data-section="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Настройки</span>
+                </button>
+            </nav>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="length">Длина:</label>
-              <select id="length">
-                <option value="800">~8 мин (800 слов)</option>
-                <option value="1200" selected>~10 мин (1200 слов)</option>
-                <option value="1500">~15 мин (1500 слов)</option>
-              </select>
-            </div>
+            <!-- ЦЕНТРАЛЬНАЯ ПАНЕЛЬ -->
+            <main class="content-area">
 
-            <div class="form-group">
-              <!-- Placeholder for future options -->
-            </div>
-          </div>
+                <!-- РАЗДЕЛ: ГЕНЕРАЦИЯ -->
+                <div id="generation-section" class="content-section active">
 
-          <button type="submit" class="btn-primary">
-            🚀 Создать видео
-          </button>
-        </form>
-      </section>
+                    <!-- БЛОК 1: СЦЕНАРИЙ -->
+                    <div class="gen-block scenario-block">
+                        <div class="block-header">
+                            <h2>📝 Сценарий</h2>
+                        </div>
 
-      <!-- Progress Section -->
-      <section class="progress-section" id="progressSection" style="display: none;">
-        <h2>Генерация видео</h2>
-        <div class="progress-info">
-          <p id="currentStep">Инициализация...</p>
-          <div class="progress-bar">
-            <div class="progress-fill" id="progressBar" style="width: 0%"></div>
-          </div>
-          <p id="progressPercent">0%</p>
-          <p id="timeRemaining">Осталось: ~60 минут</p>
+                        <div class="block-content">
+                            <textarea
+                                id="scenario-input"
+                                class="scenario-textarea"
+                                placeholder="Вставьте или напишите сценарий здесь...
+
+Пример:
+Сегодня мы разберём 5 психологических приёмов, которые изменят вашу жизнь.
+
+Первый приём - это техника якоря. Она позволяет..."
+                            ></textarea>
+
+                            <!-- Статистика -->
+                            <div class="scenario-stats-bar">
+                                <div class="stat">
+                                    <span class="stat-icon">💡</span>
+                                    <span id="char-count" class="stat-value">0 символов</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-icon">🌍</span>
+                                    <span id="lang-detected" class="stat-value">Язык: -</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-icon">⏱️</span>
+                                    <span id="duration-calc" class="stat-value">~0 мин</span>
+                                </div>
+                            </div>
+
+                            <!-- Кнопки -->
+                            <div class="scenario-actions">
+                                <button id="import-btn" class="btn-secondary">
+                                    📥 Импорт из файла
+                                </button>
+                                <button id="clear-btn" class="btn-secondary">
+                                    🗑️ Очистить
+                                </button>
+                            </div>
+
+                            <input type="file" id="file-input" accept=".txt,.docx" style="display: none;">
+                        </div>
+                    </div>
+
+                    <!-- БЛОК 2: ИЗОБРАЖЕНИЯ -->
+                    <div class="gen-block images-block">
+                        <div class="block-header">
+                            <h2>🎨 Изображения</h2>
+                        </div>
+
+                        <div class="block-content">
+
+                            <!-- Распределение изображений -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">📊 Распределение изображений</h3>
+
+                                <div class="distribution-options">
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-distribution" value="1" />
+                                        <div class="radio-content">
+                                            <span class="radio-title">1 изображение на 1 предложение</span>
+                                            <span class="radio-desc">Максимальная детализация (много изображений)</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-distribution" value="2" checked />
+                                        <div class="radio-content">
+                                            <span class="radio-title">1 изображение на 2 предложения</span>
+                                            <span class="radio-desc">Рекомендуется (баланс качества и скорости)</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-distribution" value="3" />
+                                        <div class="radio-content">
+                                            <span class="radio-title">1 изображение на 3 предложения</span>
+                                            <span class="radio-desc">Меньше изображений (быстрая генерация)</span>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <!-- Статистика -->
+                                <div class="images-estimate">
+                                    <span class="estimate-icon">💡</span>
+                                    <span id="images-count-estimate">Примерно будет создано: ~0 изображений</span>
+                                </div>
+                            </div>
+
+                            <!-- Референсы -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">📎 Референсы (опционально)</h3>
+                                <p class="subsection-hint">
+                                    Загрузите изображения персонажей или примеры стиля для консистентности
+                                </p>
+
+                                <div class="reference-controls">
+                                    <button id="add-character-btn" class="btn-add-reference">
+                                        <span class="btn-icon">👤</span>
+                                        <span class="btn-text">Добавить персонажа</span>
+                                    </button>
+                                    <button id="add-style-btn" class="btn-add-reference">
+                                        <span class="btn-icon">🎨</span>
+                                        <span class="btn-text">Добавить стиль</span>
+                                    </button>
+                                </div>
+
+                                <!-- Скрытый input для загрузки файлов -->
+                                <input type="file" id="reference-file-input" accept="image/*" style="display: none;" />
+
+                                <!-- Список загруженных референсов -->
+                                <div id="references-list" class="references-grid">
+                                    <!-- Референсы добавляются динамически -->
+                                </div>
+                            </div>
+
+                            <!-- Сервис генерации -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">🌟 Сервис генерации</h3>
+
+                                <div class="service-options">
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-service" value="whisk" checked />
+                                        <div class="radio-content">
+                                            <span class="radio-title">Whisk AI (через браузер)</span>
+                                            <span class="radio-desc">Высокое качество, консистентные персонажи</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-service" value="telegram" />
+                                        <div class="radio-content">
+                                            <span class="radio-title">Telegram Bot (fallback)</span>
+                                            <span class="radio-desc">Запасной вариант при сбое Whisk</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Настройки -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">⚙️ Настройки генерации</h3>
+
+                                <div class="settings-group">
+                                    <label class="checkbox-setting">
+                                        <input type="checkbox" id="use-references" checked />
+                                        <span>Использовать референсы для консистентности</span>
+                                    </label>
+
+                                    <label class="checkbox-setting">
+                                        <input type="checkbox" id="auto-download" checked />
+                                        <span>Автоматически скачивать результаты</span>
+                                    </label>
+                                </div>
+
+                                <div class="settings-row">
+                                    <div class="setting-item">
+                                        <label>Попытки Whisk перед fallback:</label>
+                                        <select id="whisk-retries">
+                                            <option value="1">1 попытка</option>
+                                            <option value="2" selected>2 попытки</option>
+                                            <option value="3">3 попытки</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="setting-item">
+                                        <label>Задержка между попытками:</label>
+                                        <select id="retry-delay">
+                                            <option value="3">3 секунды</option>
+                                            <option value="5" selected>5 секунд</option>
+                                            <option value="10">10 секунд</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="gen-block upcoming-block">
+                        <div class="block-header">
+                            <h2>🎬 Анимация изображений</h2>
+                        </div>
+                        <div class="block-content">
+                            <p class="coming-soon-text">Следующий этап разработки</p>
+                        </div>
+                    </div>
+
+                    <div class="gen-block upcoming-block">
+                        <div class="block-header">
+                            <h2>🔄 Переходы</h2>
+                        </div>
+                        <div class="block-content">
+                            <p class="coming-soon-text">Следующий этап разработки</p>
+                        </div>
+                    </div>
+
+                    <div class="gen-block upcoming-block">
+                        <div class="block-header">
+                            <h2>✨ Эффекты</h2>
+                        </div>
+                        <div class="block-content">
+                            <p class="coming-soon-text">Следующий этап разработки</p>
+                        </div>
+                    </div>
+
+                    <div class="gen-block upcoming-block">
+                        <div class="block-header">
+                            <h2>🎙️ Озвучка</h2>
+                        </div>
+                        <div class="block-content">
+                            <p class="coming-soon-text">Следующий этап разработки</p>
+                        </div>
+                    </div>
+
+                    <div class="gen-block upcoming-block">
+                        <div class="block-header">
+                            <h2>💬 Субтитры</h2>
+                        </div>
+                        <div class="block-content">
+                            <p class="coming-soon-text">Следующий этап разработки</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- РАЗДЕЛ: ОЧЕРЕДЬ (заглушка) -->
+                <div id="queue-section" class="content-section">
+                    <h2>📋 Очередь генерации</h2>
+                    <p>В разработке...</p>
+                </div>
+
+                <!-- РАЗДЕЛ: ВЫГРУЗКА (заглушка) -->
+                <div id="export-section" class="content-section">
+                    <h2>📤 Выгрузка готовых видео</h2>
+                    <p>В разработке...</p>
+                </div>
+
+                <!-- РАЗДЕЛ: СТАТИСТИКА (заглушка) -->
+                <div id="stats-section" class="content-section">
+                    <h2>📊 Статистика</h2>
+                    <p>В разработке...</p>
+                </div>
+
+                <!-- РАЗДЕЛ: НАСТРОЙКИ (заглушка) -->
+                <div id="settings-section" class="content-section">
+                    <h2>⚙️ Настройки</h2>
+                    <p>В разработке...</p>
+                </div>
+
+            </main>
+
+            <!-- ПРАВАЯ ПАНЕЛЬ -->
+            <aside class="right-sidebar">
+
+                <!-- КОНСОЛЬ -->
+                <div class="console-panel">
+                    <div class="panel-header">
+                        <h3>📋 Консоль</h3>
+                    </div>
+                    <div class="console-body" id="console-log">
+                        <!-- Логи добавляются динамически -->
+                    </div>
+                </div>
+
+                <!-- ИНФО О ПРОЕКТЕ -->
+                <div class="project-panel">
+                    <div class="panel-header">
+                        <h3>ℹ️ Информация о проекте</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="info-row">
+                            <span class="info-label">Язык:</span>
+                            <span id="info-language" class="info-value">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Озвучка:</span>
+                            <span id="info-voice" class="info-value">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Изображения:</span>
+                            <span id="info-images" class="info-value">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Разрешение:</span>
+                            <span id="info-resolution" class="info-value">1920x1080</span>
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+
         </div>
-      </section>
 
-      <!-- Videos List -->
-      <section class="videos-section">
-        <h2>Готовые видео</h2>
-        <div id="videosList" class="videos-grid">
-          <div class="empty-state">
-            <p>Видео ещё не созданы</p>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
+    </div>
 
-  <script src="app.js"></script>
+    <!-- Библиотека для чтения DOCX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <!-- Основной скрипт -->
+    <script src="app.js"></script>
 </body>
 </html>

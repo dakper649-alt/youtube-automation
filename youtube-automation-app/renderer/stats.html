@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика - YouTube Automation Studio</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="stats.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Хедер -->
+        <div class="stats-header">
+            <button id="back-btn" class="back-button">← Назад</button>
+            <h1>📊 Статистика</h1>
+            <button id="refresh-btn" class="refresh-button">🔄 Обновить</button>
+        </div>
+
+        <!-- Общая статистика (карточки) -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">🎬</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="total-videos">0</div>
+                    <div class="stat-label">Всего видео</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="total-time">0ч 0м</div>
+                    <div class="stat-label">Общее время</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="success-rate">0%</div>
+                    <div class="stat-label">Успешность</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📏</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="avg-duration">0 мин</div>
+                    <div class="stat-label">Средняя длина</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Графики -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <h3>📈 Видео по дням</h3>
+                <canvas id="videos-by-day-chart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>🎨 Популярные стили</h3>
+                <canvas id="styles-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-card">
+                <h3>🎙️ Использование голосов</h3>
+                <canvas id="voices-chart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>⏰ Время суток</h3>
+                <canvas id="time-of-day-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- API Usage -->
+        <div class="api-usage-section">
+            <h2>🔑 Использование API</h2>
+
+            <div class="api-usage-card">
+                <div class="api-header">
+                    <span>🤗 Hugging Face</span>
+                    <span class="api-status active">Активно</span>
+                </div>
+                <div class="api-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="hf-progress" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-text" id="hf-text">0 / ∞</span>
+                </div>
+                <div class="api-keys-count">123 ключа</div>
+            </div>
+
+            <div class="api-usage-card">
+                <div class="api-header">
+                    <span>🎙️ ElevenLabs</span>
+                    <span class="api-status active">Активно</span>
+                </div>
+                <div class="api-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="elevenlabs-progress" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-text" id="elevenlabs-text">0 / 10,000</span>
+                </div>
+                <div class="api-keys-count">54 ключа</div>
+            </div>
+
+            <div class="api-usage-card">
+                <div class="api-header">
+                    <span>📺 YouTube API</span>
+                    <span class="api-status active">Активно</span>
+                </div>
+                <div class="api-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="youtube-progress" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-text" id="youtube-text">0 / 10,000</span>
+                </div>
+                <div class="api-keys-count">5 ключей</div>
+            </div>
+
+            <div class="api-usage-card">
+                <div class="api-header">
+                    <span>🚀 Groq</span>
+                    <span class="api-status active">Активно</span>
+                </div>
+                <div class="api-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="groq-progress" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-text" id="groq-text">0 / 14,400</span>
+                </div>
+                <div class="api-keys-count">1 ключ</div>
+            </div>
+        </div>
+
+        <!-- Достижения -->
+        <div class="achievements-section">
+            <h2>🏆 Достижения</h2>
+            <div class="achievements-grid">
+                <div class="achievement unlocked">
+                    <div class="achievement-icon">🎬</div>
+                    <div class="achievement-name">Первое видео</div>
+                    <div class="achievement-desc">Создано 1 видео</div>
+                </div>
+                <div class="achievement locked">
+                    <div class="achievement-icon">🔟</div>
+                    <div class="achievement-name">Десятка</div>
+                    <div class="achievement-desc">Создано 10 видео</div>
+                </div>
+                <div class="achievement locked">
+                    <div class="achievement-icon">💯</div>
+                    <div class="achievement-name">Сотня</div>
+                    <div class="achievement-desc">Создано 100 видео</div>
+                </div>
+                <div class="achievement locked">
+                    <div class="achievement-icon">⚡</div>
+                    <div class="achievement-name">Молния</div>
+                    <div class="achievement-desc">3 видео за 1 день</div>
+                </div>
+                <div class="achievement locked">
+                    <div class="achievement-icon">🌟</div>
+                    <div class="achievement-name">Звезда</div>
+                    <div class="achievement-desc">10 видео за неделю</div>
+                </div>
+                <div class="achievement locked">
+                    <div class="achievement-icon">🚀</div>
+                    <div class="achievement-name">Ракета</div>
+                    <div class="achievement-desc">30 дней подряд</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Цели -->
+        <div class="goals-section">
+            <h2>🎯 Цели</h2>
+
+            <div class="goal-card">
+                <div class="goal-header">
+                    <span>📅 Недельная цель</span>
+                    <button class="edit-goal-btn">✏️</button>
+                </div>
+                <div class="goal-progress">
+                    <div class="progress-bar large">
+                        <div class="progress-fill" id="weekly-goal-progress" style="width: 30%"></div>
+                    </div>
+                    <span class="goal-text">3 / 10 видео</span>
+                </div>
+            </div>
+
+            <div class="goal-card">
+                <div class="goal-header">
+                    <span>📆 Месячная цель</span>
+                    <button class="edit-goal-btn">✏️</button>
+                </div>
+                <div class="goal-progress">
+                    <div class="progress-bar large">
+                        <div class="progress-fill" id="monthly-goal-progress" style="width: 15%"></div>
+                    </div>
+                    <span class="goal-text">6 / 40 видео</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Экспорт данных -->
+        <div class="export-section">
+            <h2>📤 Экспорт данных</h2>
+            <div class="export-buttons">
+                <button id="export-csv-btn" class="export-btn">📊 Экспорт в CSV</button>
+                <button id="export-json-btn" class="export-btn">📄 Экспорт в JSON</button>
+                <button id="export-excel-btn" class="export-btn">📗 Экспорт в Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="stats.js"></script>
+</body>
+</html>

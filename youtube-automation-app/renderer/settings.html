@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки - YouTube Automation Studio</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Хедер с кнопкой назад -->
+        <header class="settings-header">
+            <button id="back-btn" class="back-button">← Назад</button>
+            <h1>⚙️ Настройки</h1>
+        </header>
+
+        <!-- Вкладки -->
+        <div class="tabs">
+            <button class="tab active" data-tab="general">📁 Общие</button>
+            <button class="tab" data-tab="api">🔑 API Ключи</button>
+            <button class="tab" data-tab="generation">🎨 Генерация</button>
+            <button class="tab" data-tab="telegram">📱 Telegram</button>
+            <button class="tab" data-tab="appearance">🌙 Оформление</button>
+        </div>
+
+        <!-- Контент вкладок -->
+        <div class="tab-content">
+
+            <!-- ОБЩИЕ НАСТРОЙКИ -->
+            <div id="general-tab" class="tab-panel active">
+                <h2>📁 Общие настройки</h2>
+
+                <div class="setting-group">
+                    <label>📂 Папка для сохранения видео</label>
+                    <div class="input-with-button">
+                        <input type="text" id="output-folder" value="~/Desktop/YouTube_Videos" readonly>
+                        <button id="choose-folder-btn">Выбрать папку</button>
+                    </div>
+                    <p class="hint">Где будут сохраняться готовые видео</p>
+                </div>
+
+                <div class="setting-group">
+                    <label>🗑️ Автоматическая очистка временных файлов</label>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-cleanup" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <p class="hint">Удалять временные файлы после создания видео</p>
+                </div>
+
+                <div class="setting-group">
+                    <label>🌍 Язык интерфейса</label>
+                    <select id="language">
+                        <option value="ru" selected>🇷🇺 Русский</option>
+                        <option value="en">🇺🇸 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="uk">🇺🇦 Українська</option>
+                        <option value="pl">🇵🇱 Polski</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- API КЛЮЧИ -->
+            <div id="api-tab" class="tab-panel">
+                <h2>🔑 Управление API ключами</h2>
+
+                <!-- Hugging Face -->
+                <div class="api-section">
+                    <h3>🤗 Hugging Face (Генерация текста и изображений)</h3>
+                    <p class="api-description">123 ключа для бесплатной генерации</p>
+                    <div class="api-stats">
+                        <span class="stat">✅ Активных: <strong id="hf-active">0</strong></span>
+                        <span class="stat">📊 Запросов: <strong id="hf-requests">0</strong></span>
+                    </div>
+                    <div class="api-keys-list" id="hf-keys-list">
+                        <p class="loading">⏳ Загрузка...</p>
+                    </div>
+                    <button class="add-key-btn" onclick="addKey('huggingface')">+ Добавить ключ</button>
+                </div>
+
+                <!-- ElevenLabs -->
+                <div class="api-section">
+                    <h3>🎙️ ElevenLabs (Озвучка)</h3>
+                    <p class="api-description">54 ключа для озвучки</p>
+                    <div class="api-stats">
+                        <span class="stat">✅ Активных: <strong id="elevenlabs-active">0</strong></span>
+                        <span class="stat">📊 Запросов: <strong id="elevenlabs-requests">0</strong></span>
+                    </div>
+                    <div class="api-keys-list" id="elevenlabs-keys-list">
+                        <p class="loading">⏳ Загрузка...</p>
+                    </div>
+                    <button class="add-key-btn" onclick="addKey('elevenlabs')">+ Добавить ключ</button>
+                </div>
+
+                <!-- YouTube -->
+                <div class="api-section">
+                    <h3>📺 YouTube API (Анализ конкурентов)</h3>
+                    <p class="api-description">Для анализа конкурентов и трендов</p>
+                    <div class="api-stats">
+                        <span class="stat">✅ Активных: <strong id="youtube-active">0</strong></span>
+                        <span class="stat">📊 Запросов: <strong id="youtube-requests">0</strong></span>
+                    </div>
+                    <div class="api-keys-list" id="youtube-keys-list">
+                        <p class="loading">⏳ Загрузка...</p>
+                    </div>
+                    <button class="add-key-btn" onclick="addKey('youtube')">+ Добавить ключ</button>
+                </div>
+
+                <!-- Groq -->
+                <div class="api-section">
+                    <h3>🚀 Groq (Генерация скриптов)</h3>
+                    <p class="api-description">Llama 3.1 70B для быстрой генерации</p>
+                    <div class="api-stats">
+                        <span class="stat">✅ Активных: <strong id="groq-active">0</strong></span>
+                        <span class="stat">📊 Запросов: <strong id="groq-requests">0</strong></span>
+                    </div>
+                    <div class="api-keys-list" id="groq-keys-list">
+                        <p class="loading">⏳ Загрузка...</p>
+                    </div>
+                    <button class="add-key-btn" onclick="addKey('groq')">+ Добавить ключ</button>
+                </div>
+            </div>
+
+            <!-- ГЕНЕРАЦИЯ -->
+            <div id="generation-tab" class="tab-panel">
+                <h2>🎨 Настройки генерации</h2>
+
+                <div class="setting-group">
+                    <label>🖼️ Стиль изображений по умолчанию</label>
+                    <select id="default-style">
+                        <option value="minimalist_stick_figure">👤 Minimalist Stick Figure</option>
+                        <!-- Остальные стили будут загружены динамически -->
+                    </select>
+                    <p class="hint">Какой стиль использовать при создании нового видео</p>
+                </div>
+
+                <div class="setting-group">
+                    <label>🎙️ Голос по умолчанию</label>
+                    <select id="default-voice">
+                        <option value="rachel">🎭 Rachel</option>
+                        <!-- Остальные голоса будут загружены динамически -->
+                    </select>
+                    <p class="hint">Голос диктора по умолчанию</p>
+                </div>
+
+                <div class="setting-group">
+                    <label>🎵 Фоновая музыка по умолчанию</label>
+                    <select id="default-music">
+                        <option value="calm_piano">🎹 Calm Piano</option>
+                        <option value="no_music">🔇 Без музыки</option>
+                        <!-- Остальные треки будут загружены динамически -->
+                    </select>
+                    <p class="hint">Музыка, которая будет использоваться по умолчанию</p>
+                </div>
+
+                <div class="setting-group">
+                    <label>🎵 Включить фоновую музыку по умолчанию</label>
+                    <label class="switch">
+                        <input type="checkbox" id="music-enabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <p class="hint">Автоматически добавлять музыку к новым видео</p>
+                </div>
+
+                <div class="setting-group">
+                    <label>📏 Длина видео по умолчанию</label>
+                    <select id="default-length">
+                        <option value="800">~8 мин (800 слов)</option>
+                        <option value="1200" selected>~10 мин (1200 слов)</option>
+                        <option value="1500">~15 мин (1500 слов)</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label>🖥️ Локальная генерация скриптов (Ollama)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="ollama-enabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <p class="hint">
+                        Использовать Ollama для бесплатной локальной генерации скриптов (Llama 3.1 8B)
+                        <br>
+                        ⚡ Быстро, бесплатно, приватно | ⚠️ Требуется установка: <code>brew install ollama</code>
+                    </p>
+                    <button id="test-ollama-btn" class="test-button">🧪 Проверить Ollama</button>
+                </div>
+            </div>
+
+            <!-- TELEGRAM -->
+            <div id="telegram-tab" class="tab-panel">
+                <h2>📱 Telegram уведомления</h2>
+
+                <!-- Статус подключения -->
+                <div class="connection-status" id="telegram-status">
+                    <span class="status-indicator offline"></span>
+                    <span>Не подключено</span>
+                </div>
+
+                <!-- Настройки бота -->
+                <div class="setting-group">
+                    <label>🤖 Bot Token</label>
+                    <input type="password" id="telegram-token" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz">
+                    <p class="hint">Получить у @BotFather в Telegram</p>
+                    <button class="help-btn" onclick="showTelegramHelp('token')">❓ Как получить?</button>
+                </div>
+
+                <div class="setting-group">
+                    <label>💬 Chat ID</label>
+                    <input type="text" id="telegram-chat-id" placeholder="301238133" value="301238133">
+                    <p class="hint">Ваш Telegram Chat ID</p>
+                    <button class="help-btn" onclick="showTelegramHelp('chatid')">❓ Как получить?</button>
+                </div>
+
+                <!-- Типы уведомлений -->
+                <div class="setting-group">
+                    <h3>🔔 Типы уведомлений</h3>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-start" checked>
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">🎬 Старт генерации</span>
+                            <span class="checkbox-desc">Уведомление при начале создания видео</span>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-progress" checked>
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">📊 Обновления прогресса</span>
+                            <span class="checkbox-desc">Каждые 20% прогресса (5 сообщений на видео)</span>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-complete" checked>
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">✅ Завершение генерации</span>
+                            <span class="checkbox-desc">Уведомление с превью когда видео готово</span>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-error" checked>
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">❌ Ошибки</span>
+                            <span class="checkbox-desc">Уведомления об ошибках с деталями</span>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-youtube" checked>
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">📤 Постинг на YouTube</span>
+                            <span class="checkbox-desc">Уведомление после загрузки на YouTube</span>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-stats">
+                        <div class="checkbox-content">
+                            <span class="checkbox-title">📊 Статистика дня</span>
+                            <span class="checkbox-desc">Ежедневная сводка в 20:00</span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Шаблоны сообщений -->
+                <div class="setting-group">
+                    <h3>💬 Шаблоны сообщений</h3>
+                    <p class="hint">Настройте как будут выглядеть уведомления</p>
+
+                    <div class="template-editor">
+                        <label>Старт генерации:</label>
+                        <textarea id="template-start" rows="3">🎬 Началась генерация видео
+📝 Тема: {topic}
+⏱️ Примерное время: {estimated_time}</textarea>
+                    </div>
+
+                    <div class="template-editor">
+                        <label>Завершение:</label>
+                        <textarea id="template-complete" rows="4">✅ Видео готово!
+📝 Тема: {topic}
+⏱️ Время генерации: {generation_time}
+🎬 Файл: {video_path}</textarea>
+                    </div>
+
+                    <div class="template-editor">
+                        <label>Ошибка:</label>
+                        <textarea id="template-error" rows="3">❌ Ошибка при создании видео
+📝 Тема: {topic}
+🔴 Ошибка: {error_message}</textarea>
+                    </div>
+
+                    <button class="secondary-button" onclick="resetTemplates()">🔄 Сбросить шаблоны</button>
+                </div>
+
+                <!-- Тестовая отправка -->
+                <div class="setting-group">
+                    <h3>🧪 Тестирование</h3>
+                    <button id="test-telegram-btn" class="test-button">📤 Отправить тестовое сообщение</button>
+                    <p class="hint">Проверьте работу Telegram уведомлений</p>
+                </div>
+
+                <!-- Команды бота (информация) -->
+                <div class="setting-group">
+                    <h3>🤖 Команды бота</h3>
+                    <p class="hint">После настройки будут доступны команды:</p>
+                    <div class="commands-list">
+                        <div class="command-item">
+                            <code>/status</code>
+                            <span>Текущий статус генерации</span>
+                        </div>
+                        <div class="command-item">
+                            <code>/videos</code>
+                            <span>Список готовых видео</span>
+                        </div>
+                        <div class="command-item">
+                            <code>/stats</code>
+                            <span>Статистика за сегодня</span>
+                        </div>
+                        <div class="command-item">
+                            <code>/cancel</code>
+                            <span>Отменить текущую генерацию</span>
+                        </div>
+                    </div>
+                    <p class="hint">📝 Команды будут работать в ФАЗЕ 2</p>
+                </div>
+            </div>
+
+            <!-- ОФОРМЛЕНИЕ -->
+            <div id="appearance-tab" class="tab-panel">
+                <h2>🌙 Оформление</h2>
+
+                <div class="setting-group">
+                    <label>🎨 Тема</label>
+                    <div class="theme-selector">
+                        <button class="theme-option active" data-theme="dark">
+                            🌙 Тёмная
+                        </button>
+                        <button class="theme-option" data-theme="light">
+                            ☀️ Светлая
+                        </button>
+                    </div>
+                    <p class="hint">Тёмная тема снижает нагрузку на глаза</p>
+                </div>
+
+                <div class="setting-group">
+                    <label>📏 Размер шрифта</label>
+                    <select id="font-size">
+                        <option value="small">Маленький</option>
+                        <option value="medium" selected>Средний</option>
+                        <option value="large">Большой</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label>🎬 Анимации интерфейса</label>
+                    <label class="switch">
+                        <input type="checkbox" id="animations-enabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <p class="hint">Плавные переходы и анимации</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="settings-actions">
+            <button id="save-settings-btn" class="primary-button">💾 Сохранить настройки</button>
+            <button id="export-settings-btn" class="secondary-button">📤 Экспорт</button>
+            <button id="import-settings-btn" class="secondary-button">📥 Импорт</button>
+            <button id="reset-settings-btn" class="danger-button">🔄 Сбросить</button>
+        </div>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+</html>

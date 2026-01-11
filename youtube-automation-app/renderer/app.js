@@ -1,367 +1,570 @@
-// UI State
-let isGenerating = false;
+/* ═══════════════════════════════════════════════════════════════
+   YOUTUBE AUTOMATION STUDIO - MAIN APPLICATION LOGIC
+   ═══════════════════════════════════════════════════════════════ */
 
-// Image Styles Configuration (20 professional styles)
-const IMAGE_STYLES = {
-    'minimalist_stick_figure': { name: '👤 Minimalist Stick Figure', desc: 'Простые фигуры - психология' },
-    'anime': { name: '🎨 Anime Style', desc: 'Яркий аниме - истории' },
-    'watercolor': { name: '🖌️ Watercolor Painting', desc: 'Акварель - wellness' },
-    'oil_painting': { name: '🖼️ Oil Painting', desc: 'Классика - серьёзный контент' },
-    'cyberpunk': { name: '🌃 Cyberpunk', desc: 'Неон - технологии' },
-    'retro_80s': { name: '📼 Retro 80s', desc: 'Ретро - ностальгия' },
-    'pixel_art': { name: '🎮 Pixel Art', desc: 'Пиксели - геймеры' },
-    'comic_book': { name: '💥 Comic Book', desc: 'Комиксы - экшен' },
-    'photorealistic': { name: '📷 Photorealistic', desc: 'Фото - документальное' },
-    'clay_animation': { name: '🧸 Clay Animation', desc: 'Пластилин - дети' },
-    'paper_cutout': { name: '✂️ Paper Cut-out', desc: 'Аппликация - творчество' },
-    'neon_glow': { name: '✨ Neon Glow', desc: 'Неон - ночь' },
-    'abstract_art': { name: '🎭 Abstract Art', desc: 'Абстракция - философия' },
-    'low_poly_3d': { name: '🔷 Low Poly 3D', desc: '3D графика - дизайн' },
-    'sketch_drawing': { name: '✏️ Sketch Drawing', desc: 'Набросок - искусство' },
-    'digital_art': { name: '💻 Digital Art', desc: 'Цифровое - универсально' },
-    'fantasy_art': { name: '🧙 Fantasy Art', desc: 'Фэнтези - магия' },
-    'scifi_concept': { name: '🚀 Sci-Fi Concept', desc: 'Sci-Fi - будущее' },
-    'vintage_poster': { name: '📜 Vintage Poster', desc: 'Винтаж - ретро' },
-    'flat_design': { name: '📊 Flat Design', desc: 'Плоский - бизнес' }
-};
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION SYSTEM
+// ═══════════════════════════════════════════════════════════════
 
-// Voice Configuration (15 ElevenLabs voices)
-const VOICES = {
-    // Психология / Wellness
-    'rachel': { name: '🎭 Rachel', desc: 'Теплый, дружелюбный (Psychology)', tag: '⭐ Лучший для психологии', recommended: true },
-    'charlotte': { name: '👩‍🏫 Charlotte', desc: 'Профессиональный (Education)' },
-    'grace': { name: '🧘‍♀️ Grace', desc: 'Спокойный, мудрый (Meditation)' },
+function initNavigation() {
+    const navButtons = document.querySelectorAll('.nav-btn');
 
-    // Бизнес / Мотивация
-    'adam': { name: '💼 Adam', desc: 'Уверенный, авторитетный (Business)', tag: '⭐ Лучший для бизнеса', recommended: true },
-    'antoni': { name: '🚀 Antoni', desc: 'Энергичный (Entrepreneurship)' },
-    'josh': { name: '⭐ Josh', desc: 'Позитивный, вдохновляющий (Motivation)' },
-    'arnold': { name: '🎙️ Arnold', desc: 'Глубокий, спокойный (Finance)' },
-
-    // Истории / Развлечения
-    'bella': { name: '🎬 Bella', desc: 'Эмоциональный, драматичный (Stories)', tag: '⭐ Лучший для историй', recommended: true },
-    'elli': { name: '🎉 Elli', desc: 'Молодой, игривый (Entertainment)' },
-    'sam': { name: '🎭 Sam', desc: 'Динамичный, захватывающий (Thriller)' },
-
-    // Образование / Наука
-    'domi': { name: '📚 Domi', desc: 'Ясный, образовательный (Tutorial)' },
-    'ethan': { name: '🔬 Ethan', desc: 'Умный, информативный (Science)' },
-
-    // Дополнительные
-    'callum': { name: '📰 Callum', desc: 'Спокойный, надёжный (Documentary)' },
-    'daniel': { name: '🎩 Daniel', desc: 'Британский, благородный (History)' },
-    'lily': { name: '🌸 Lily', desc: 'Элегантный, утончённый (Culture)' }
-};
-
-// Background Music Configuration (13 tracks)
-const BACKGROUND_MUSIC = {
-    // Психология / Wellness
-    'calm_piano': { name: '🎹 Calm Piano', desc: 'Спокойное фортепиано - психология', tag: '⭐ Рекомендовано', recommended: true },
-    'soft_strings': { name: '🎻 Soft Strings', desc: 'Мягкие струнные - медитация' },
-    'ambient_nature': { name: '🌿 Ambient Nature', desc: 'Звуки природы - релакс' },
-
-    // Бизнес / Мотивация
-    'uplifting_corporate': { name: '💼 Uplifting Corporate', desc: 'Мотивирующая - бизнес', tag: '⭐ Рекомендовано', recommended: true },
-    'inspiring_orchestral': { name: '🎺 Inspiring Orchestral', desc: 'Вдохновляющая - успех' },
-    'modern_tech': { name: '💻 Modern Tech', desc: 'Современная - технологии' },
-
-    // Истории / Драма
-    'cinematic_tension': { name: '🎬 Cinematic Tension', desc: 'Напряжение - триллер', tag: '⭐ Рекомендовано', recommended: true },
-    'emotional_piano': { name: '😢 Emotional Piano', desc: 'Эмоциональная - драма' },
-    'suspense_strings': { name: '🔍 Suspense Strings', desc: 'Саспенс - детектив' },
-
-    // Образование
-    'light_background': { name: '📚 Light Background', desc: 'Лёгкая - обучение', tag: '⭐ Рекомендовано', recommended: true },
-    'neutral_corporate': { name: '📊 Neutral Corporate', desc: 'Нейтральная - презентации' },
-
-    // Энергичное
-    'upbeat_acoustic': { name: '🎸 Upbeat Acoustic', desc: 'Позитивная - лайфстайл' },
-    'energetic_pop': { name: '🎉 Energetic Pop', desc: 'Энергичная - развлечения' },
-
-    // Без музыки
-    'no_music': { name: '🔇 No Music', desc: 'Без фоновой музыки' }
-};
-
-// Initialize UI on load
-function initializeUI() {
-    // Populate style dropdown
-    const styleSelect = document.getElementById('style');
-    styleSelect.innerHTML = '';
-
-    for (const [key, data] of Object.entries(IMAGE_STYLES)) {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = `${data.name} - ${data.desc}`;
-        styleSelect.appendChild(option);
-    }
-
-    // Set default style
-    styleSelect.value = 'minimalist_stick_figure';
-
-    console.log('✅ UI initialized with 20 image styles');
-
-    // Populate voice dropdown
-    const voiceSelect = document.getElementById('voice');
-    voiceSelect.innerHTML = '';
-
-    for (const [key, data] of Object.entries(VOICES)) {
-        const option = document.createElement('option');
-        option.value = key;
-        const tag = data.tag ? ` ${data.tag}` : '';
-        option.textContent = `${data.name} - ${data.desc}${tag}`;
-        voiceSelect.appendChild(option);
-    }
-
-    // Set default voice
-    voiceSelect.value = 'rachel';
-
-    // Add preview button if not exists
-    const voiceGroup = voiceSelect.parentElement;
-    if (!document.getElementById('previewVoiceBtn')) {
-        const previewButton = document.createElement('button');
-        previewButton.id = 'previewVoiceBtn';
-        previewButton.type = 'button';
-        previewButton.className = 'preview-voice-btn';
-        previewButton.innerHTML = '▶️ Прослушать';
-        previewButton.onclick = playVoicePreview;
-        voiceGroup.appendChild(previewButton);
-    }
-
-    console.log('✅ UI initialized with 15 ElevenLabs voices');
-
-    // Populate music dropdown
-    const musicSelect = document.getElementById('music');
-    if (musicSelect) {
-        musicSelect.innerHTML = '';
-
-        for (const [key, data] of Object.entries(BACKGROUND_MUSIC)) {
-            const option = document.createElement('option');
-            option.value = key;
-            const tag = data.tag ? ` ${data.tag}` : '';
-            option.textContent = `${data.name} - ${data.desc}${tag}`;
-            musicSelect.appendChild(option);
-        }
-
-        // Set default music
-        musicSelect.value = 'calm_piano';
-
-        console.log('✅ UI initialized with 13 background music tracks');
-    }
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const section = btn.dataset.section;
+            switchSection(section);
+        });
+    });
 }
 
-async function playVoicePreview() {
-    const voiceSelect = document.getElementById('voice');
-    const selectedVoice = voiceSelect.value;
-    const previewButton = document.getElementById('previewVoiceBtn');
-
-    try {
-        previewButton.innerHTML = '⏳ Загрузка...';
-        previewButton.disabled = true;
-
-        // Fetch audio from API
-        const response = await fetch(`http://localhost:5001/api/preview-voice/${selectedVoice}`);
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to generate preview');
-        }
-
-        // Create audio from blob
-        const blob = await response.blob();
-        const audioUrl = URL.createObjectURL(blob);
-        const audio = new Audio(audioUrl);
-
-        previewButton.innerHTML = '⏸️ Играет...';
-
-        audio.onended = () => {
-            previewButton.innerHTML = '▶️ Прослушать';
-            previewButton.disabled = false;
-            URL.revokeObjectURL(audioUrl);
-        };
-
-        audio.onerror = () => {
-            previewButton.innerHTML = '▶️ Прослушать';
-            previewButton.disabled = false;
-            URL.revokeObjectURL(audioUrl);
-            alert('Ошибка воспроизведения аудио');
-        };
-
-        await audio.play();
-
-    } catch (error) {
-        console.error('Voice preview error:', error);
-        alert('Ошибка прослушки голоса: ' + error.message);
-        previewButton.innerHTML = '▶️ Прослушать';
-        previewButton.disabled = false;
-    }
-}
-
-// Form submission
-document.getElementById('createVideoForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  if (isGenerating) return;
-
-  const formData = {
-    topic: document.getElementById('topic').value,
-    niche: document.getElementById('niche').value,
-    style: document.getElementById('style').value,
-    voice: document.getElementById('voice').value,
-    music: document.getElementById('music')?.value || 'no_music',
-    length: parseInt(document.getElementById('length').value)
-  };
-
-  startVideoGeneration(formData);
-});
-
-async function startVideoGeneration(data) {
-  isGenerating = true;
-
-  // Disable submit button
-  const submitBtn = document.querySelector('.btn-primary');
-  submitBtn.disabled = true;
-  submitBtn.textContent = '⏳ Генерация...';
-
-  // Show progress section
-  document.getElementById('progressSection').style.display = 'block';
-  document.getElementById('progressSection').scrollIntoView({ behavior: 'smooth' });
-
-  try {
-    // Call Flask API через fetch
-    const response = await fetch('http://localhost:5001/api/create-video', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
+function switchSection(sectionName) {
+    // Remove active from all nav buttons
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
     });
 
-    const result = await response.json();
-
-    if (result.success) {
-      // Start polling for progress
-      pollProgress(result.task_id);
-    } else {
-      throw new Error(result.error || 'Unknown error');
+    // Add active to clicked button
+    const activeBtn = document.querySelector(`.nav-btn[data-section="${sectionName}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
     }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Ошибка подключения к серверу: ' + error.message + '\n\nУбедитесь что Flask сервер запущен.');
-    resetUI();
-  }
+
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
+
+    // Show selected section
+    const activeSection = document.getElementById(`${sectionName}-section`);
+    if (activeSection) {
+        activeSection.classList.add('active');
+    }
+
+    // Log to console
+    addLog('info', `Переключено на: ${getSectionName(sectionName)}`);
 }
 
-function pollProgress(taskId) {
-  const interval = setInterval(async () => {
+function getSectionName(sectionId) {
+    const names = {
+        'generation': 'Генерация видео',
+        'queue': 'Очередь генерации',
+        'export': 'Выгрузка видео',
+        'stats': 'Статистика',
+        'settings': 'Настройки'
+    };
+    return names[sectionId] || sectionId;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCENARIO STATS & DETECTION
+// ═══════════════════════════════════════════════════════════════
+
+function initScenarioField() {
+    const textarea = document.getElementById('scenario-input');
+
+    if (textarea) {
+        // Update stats on input
+        textarea.addEventListener('input', updateScenarioStats);
+
+        // Initial update
+        updateScenarioStats();
+    }
+}
+
+function updateScenarioStats() {
+    const textarea = document.getElementById('scenario-input');
+    const text = textarea.value;
+
+    // Character count
+    const charCount = text.length;
+    document.getElementById('char-count').textContent = `${charCount.toLocaleString()} символов`;
+
+    // Language detection
+    const language = detectLanguage(text);
+    document.getElementById('lang-detected').textContent = `Язык: ${language}`;
+
+    // Duration calculation (900-1000 chars per minute, average 950)
+    const durationMin = Math.round(charCount / 950);
+    document.getElementById('duration-calc').textContent = `~${durationMin} мин`;
+
+    // Update project info panel
+    document.getElementById('info-language').textContent = language;
+
+    // Update images estimate
+    if (typeof updateImagesEstimate === 'function') {
+        updateImagesEstimate();
+    }
+}
+
+function detectLanguage(text) {
+    if (!text || text.length < 10) return '-';
+
+    // Подсчёт символов разных алфавитов
+    const cyrillicCount = (text.match(/[а-яёА-ЯЁ]/g) || []).length;
+    const latinCount = (text.match(/[a-zA-Z]/g) || []).length;
+    const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+    const japaneseCount = (text.match(/[\u3040-\u309f\u30a0-\u30ff]/g) || []).length;
+    const koreanCount = (text.match(/[\uac00-\ud7af]/g) || []).length;
+    const arabicCount = (text.match(/[\u0600-\u06ff]/g) || []).length;
+    const hebrewCount = (text.match(/[\u0590-\u05ff]/g) || []).length;
+    const thaiCount = (text.match(/[\u0e00-\u0e7f]/g) || []).length;
+    const hindiCount = (text.match(/[\u0900-\u097f]/g) || []).length;
+
+    // Определение языка по максимальному количеству специфичных символов
+    const counts = {
+        'Китайский (ZH)': chineseCount,
+        'Японский (JA)': japaneseCount,
+        'Корейский (KO)': koreanCount,
+        'Арабский (AR)': arabicCount,
+        'Иврит (HE)': hebrewCount,
+        'Тайский (TH)': thaiCount,
+        'Хинди (HI)': hindiCount
+    };
+
+    // Найти максимум среди неевропейских языков
+    let maxLang = null;
+    let maxCount = 0;
+
+    for (const [lang, count] of Object.entries(counts)) {
+        if (count > maxCount && count > 5) { // минимум 5 символов
+            maxCount = count;
+            maxLang = lang;
+        }
+    }
+
+    // Если найден неевропейский язык - вернуть его
+    if (maxLang) {
+        return maxLang;
+    }
+
+    // Проверка кириллицы (русский/украинский)
+    if (cyrillicCount > latinCount && cyrillicCount > 10) {
+        // Украинские буквы (і, ї, є, ґ)
+        const ukrainianChars = (text.match(/[іїєґІЇЄҐ]/g) || []).length;
+        if (ukrainianChars > 2) {
+            return 'Украинский (UK)';
+        }
+        return 'Русский (RU)';
+    }
+
+    // Проверка латиницы (европейские языки)
+    if (latinCount > 10) {
+        // Испанский (ñ, á, é, í, ó, ú, ¿, ¡)
+        const spanishChars = (text.match(/[ñáéíóúÑÁÉÍÓÚ¿¡]/g) || []).length;
+        if (spanishChars > 2) {
+            return 'Испанский (ES)';
+        }
+
+        // Французский (è, é, ê, ë, à, â, ç, ù, î, ô)
+        const frenchChars = (text.match(/[èéêëàâçùîôÈÉÊËÀÂÇÙÎÔ]/g) || []).length;
+        if (frenchChars > 2) {
+            return 'Французский (FR)';
+        }
+
+        // Немецкий (ä, ö, ü, ß)
+        const germanChars = (text.match(/[äöüßÄÖÜ]/g) || []).length;
+        if (germanChars > 2) {
+            return 'Немецкий (DE)';
+        }
+
+        // Португальский (ã, õ, â, ê, ô, ç)
+        const portugueseChars = (text.match(/[ãõâêôçÃÕÂÊÔÇ]/g) || []).length;
+        if (portugueseChars > 2) {
+            return 'Португальский (PT)';
+        }
+
+        // Итальянский (à, è, é, ì, ò, ù)
+        const italianChars = (text.match(/[àèéìòùÀÈÉÌÒÙ]/g) || []).length;
+        if (italianChars > 2) {
+            return 'Итальянский (IT)';
+        }
+
+        // Польский (ą, ć, ę, ł, ń, ó, ś, ź, ż)
+        const polishChars = (text.match(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g) || []).length;
+        if (polishChars > 2) {
+            return 'Польский (PL)';
+        }
+
+        // По умолчанию - английский
+        return 'Английский (EN)';
+    }
+
+    return 'Не определён';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILE IMPORT (TXT + DOCX)
+// ═══════════════════════════════════════════════════════════════
+
+function initFileImport() {
+    const importBtn = document.getElementById('import-btn');
+    const fileInput = document.getElementById('file-input');
+
+    if (importBtn && fileInput) {
+        importBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', handleFileImport);
+    }
+}
+
+async function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    addLog('info', `Импорт файла: ${file.name}`);
+
     try {
-      const response = await fetch(`http://localhost:5001/api/progress/${taskId}`);
-      const data = await response.json();
+        let text = '';
 
-      updateProgress(data);
+        if (file.name.endsWith('.txt')) {
+            text = await readTextFile(file);
+        } else if (file.name.endsWith('.docx')) {
+            text = await readDocxFile(file);
+        } else {
+            addLog('error', 'Неподдерживаемый формат файла');
+            return;
+        }
 
-      if (data.status === 'completed') {
-        clearInterval(interval);
-        onVideoComplete(data);
-      } else if (data.status === 'error') {
-        clearInterval(interval);
-        onVideoError(data);
-      }
+        // Insert text into textarea
+        document.getElementById('scenario-input').value = text;
+        updateScenarioStats();
+
+        addLog('success', `Импортировано ${text.length} символов из ${file.name}`);
+
     } catch (error) {
-      console.error('Progress poll error:', error);
+        console.error('File import error:', error);
+        addLog('error', `Ошибка импорта: ${error.message}`);
     }
-  }, 2000); // Poll every 2 seconds
+
+    // Reset file input
+    event.target.value = '';
 }
 
-function updateProgress(data) {
-  document.getElementById('currentStep').textContent = data.step || 'Генерация...';
-  document.getElementById('progressBar').style.width = (data.progress || 0) + '%';
-  document.getElementById('progressPercent').textContent = (data.progress || 0) + '%';
-  document.getElementById('timeRemaining').textContent = `Осталось: ~${data.timeRemaining || 60} минут`;
+async function readTextFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            resolve(e.target.result);
+        };
+
+        reader.onerror = (e) => {
+            reject(new Error('Ошибка чтения TXT файла'));
+        };
+
+        reader.readAsText(file);
+    });
 }
 
-function onVideoComplete(data) {
-  resetUI();
+async function readDocxFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
 
-  // Add video to list
-  if (data.video) {
-    addVideoToList(data.video);
-  }
+        reader.onload = async (e) => {
+            try {
+                const arrayBuffer = e.target.result;
 
-  // Show notification
-  alert('🎉 Видео готово!\n\n' + (data.video?.title || 'Видео успешно создано!'));
+                // Use Mammoth.js to extract text
+                const result = await mammoth.extractRawText({ arrayBuffer });
+
+                resolve(result.value);
+            } catch (error) {
+                reject(new Error('Ошибка чтения DOCX файла'));
+            }
+        };
+
+        reader.onerror = (e) => {
+            reject(new Error('Ошибка чтения DOCX файла'));
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
 }
 
-function onVideoError(data) {
-  resetUI();
-  alert('❌ Ошибка генерации:\n\n' + (data.error || 'Неизвестная ошибка'));
-}
+// ═══════════════════════════════════════════════════════════════
+// CLEAR BUTTON
+// ═══════════════════════════════════════════════════════════════
 
-function resetUI() {
-  isGenerating = false;
+function initClearButton() {
+    const clearBtn = document.getElementById('clear-btn');
 
-  const submitBtn = document.querySelector('.btn-primary');
-  submitBtn.disabled = false;
-  submitBtn.textContent = '🚀 Создать видео';
-
-  document.getElementById('progressSection').style.display = 'none';
-}
-
-function addVideoToList(video) {
-  const videosList = document.getElementById('videosList');
-
-  // Remove empty state
-  const emptyState = videosList.querySelector('.empty-state');
-  if (emptyState) {
-    emptyState.remove();
-  }
-
-  // Add video card
-  const videoCard = document.createElement('div');
-  videoCard.className = 'video-card';
-  videoCard.innerHTML = `
-    <h3>${video.title || 'Новое видео'}</h3>
-    <p>Длительность: ${video.duration || 'N/A'}</p>
-    <p>Создано: ${new Date().toLocaleString('ru-RU')}</p>
-    <button onclick="openVideo('${video.path}')">▶️ Открыть</button>
-  `;
-
-  videosList.prepend(videoCard);
-}
-
-function openVideo(path) {
-  // Open video in default app
-  fetch('http://localhost:5001/api/open-file', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ path })
-  });
-}
-
-function openSettings() {
-  alert('⚙️ Настройки\n\nДля настройки API ключей отредактируйте файл .env в корневой директории проекта.');
-}
-
-// Backend ready listener
-if (window.electronAPI) {
-  window.electronAPI.onBackendReady(() => {
-    console.log('✅ Backend server is ready!');
-  });
-}
-
-// Check if backend is ready on load
-window.addEventListener('load', async () => {
-  // Initialize UI with 20 styles
-  initializeUI();
-
-  // Check backend health
-  try {
-    const response = await fetch('http://localhost:5001/api/health');
-    if (response.ok) {
-      console.log('✅ Flask server is running');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Очистить поле сценария?')) {
+                document.getElementById('scenario-input').value = '';
+                updateScenarioStats();
+                addLog('warning', 'Сценарий очищен');
+            }
+        });
     }
-  } catch (error) {
-    console.warn('⚠️ Flask server not ready yet:', error.message);
-  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONSOLE LOGGING SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+const MAX_LOG_ENTRIES = 100;
+
+function addLog(type, message) {
+    const consoleLog = document.getElementById('console-log');
+    if (!consoleLog) return;
+
+    // Create log entry
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+
+    // Format timestamp
+    const now = new Date();
+    const time = now.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+
+    // Set content
+    entry.innerHTML = `
+        <span class="log-time">${time}</span>
+        <span class="log-text">${escapeHtml(message)}</span>
+    `;
+
+    // Add to console
+    consoleLog.appendChild(entry);
+
+    // Auto-scroll to bottom
+    consoleLog.scrollTop = consoleLog.scrollHeight;
+
+    // Limit number of entries
+    while (consoleLog.children.length > MAX_LOG_ENTRIES) {
+        consoleLog.removeChild(consoleLog.firstChild);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMAGES BLOCK
+// ═══════════════════════════════════════════════════════════════
+
+let references = []; // Массив референсов
+let currentReferenceType = null; // 'character' или 'style'
+
+function initImages() {
+    // Обновление оценки количества изображений
+    const distributionRadios = document.querySelectorAll('input[name="image-distribution"]');
+    distributionRadios.forEach(radio => {
+        radio.addEventListener('change', updateImagesEstimate);
+    });
+
+    // Кнопки добавления референсов
+    document.getElementById('add-character-btn').addEventListener('click', () => {
+        currentReferenceType = 'character';
+        document.getElementById('reference-file-input').click();
+    });
+
+    document.getElementById('add-style-btn').addEventListener('click', () => {
+        currentReferenceType = 'style';
+        document.getElementById('reference-file-input').click();
+    });
+
+    // Загрузка референса
+    document.getElementById('reference-file-input').addEventListener('change', handleReferenceUpload);
+
+    // Начальная оценка
+    updateImagesEstimate();
+}
+
+function updateImagesEstimate() {
+    const text = document.getElementById('scenario-input').value;
+    if (!text) {
+        document.getElementById('images-count-estimate').textContent = 'Примерно будет создано: ~0 изображений';
+        return;
+    }
+
+    // Подсчёт предложений (примерный - по точкам, вопросам, восклицаниям)
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+    const sentenceCount = sentences.length;
+
+    // Получить распределение
+    const distributionValue = parseInt(document.querySelector('input[name="image-distribution"]:checked').value);
+
+    // Рассчитать количество изображений
+    const imagesCount = Math.ceil(sentenceCount / distributionValue);
+
+    document.getElementById('images-count-estimate').textContent =
+        `Примерно будет создано: ~${imagesCount} изображений`;
+
+    addLog('info', `📊 Оценка: ${imagesCount} изображений (${sentenceCount} предложений / ${distributionValue})`);
+}
+
+async function handleReferenceUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Проверка типа файла
+    if (!file.type.startsWith('image/')) {
+        alert('Пожалуйста, выберите изображение');
+        return;
+    }
+
+    // Проверка размера (макс 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('Файл слишком большой (макс 10MB)');
+        return;
+    }
+
+    addLog('info', `📎 Загрузка референса: ${file.name}`);
+
+    try {
+        // Создать превью
+        const imageUrl = await readFileAsDataURL(file);
+
+        // Отправить на сервер
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', currentReferenceType);
+
+        const response = await fetch('http://localhost:5001/api/upload-reference', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки на сервер');
+        }
+
+        const result = await response.json();
+
+        // Добавить в массив референсов
+        const reference = {
+            id: result.id,
+            type: currentReferenceType,
+            name: file.name,
+            url: imageUrl,
+            serverPath: result.path
+        };
+
+        references.push(reference);
+        renderReferences();
+
+        addLog('success', `✅ Референс загружен: ${file.name}`);
+
+    } catch (error) {
+        addLog('error', `❌ Ошибка загрузки референса: ${error.message}`);
+        alert(`Ошибка загрузки:\n${error.message}`);
+    }
+
+    // Очистить input
+    event.target.value = '';
+}
+
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(new Error('Ошибка чтения файла'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderReferences() {
+    const container = document.getElementById('references-list');
+
+    if (references.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = references.map((ref, index) => `
+        <div class="reference-card">
+            <img src="${ref.url}" alt="${ref.name}" class="reference-image">
+            <div class="reference-info">
+                <div class="reference-type">${ref.type === 'character' ? '👤 Персонаж' : '🎨 Стиль'}</div>
+                <div class="reference-name">${ref.name}</div>
+            </div>
+            <button class="reference-remove" onclick="removeReference(${index})">✕</button>
+        </div>
+    `).join('');
+}
+
+function removeReference(index) {
+    const ref = references[index];
+
+    if (confirm(`Удалить референс "${ref.name}"?`)) {
+        // Удалить с сервера
+        fetch(`http://localhost:5001/api/delete-reference/${ref.id}`, {
+            method: 'DELETE'
+        }).catch(err => console.error('Ошибка удаления с сервера:', err));
+
+        // Удалить из массива
+        references.splice(index, 1);
+        renderReferences();
+
+        addLog('info', `🗑️ Референс удалён: ${ref.name}`);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROJECT INFO PANEL
+// ═══════════════════════════════════════════════════════════════
+
+function initProjectInfo() {
+    // Set default values
+    document.getElementById('info-language').textContent = '-';
+    document.getElementById('info-voice').textContent = '-';
+    document.getElementById('info-images').textContent = '-';
+    document.getElementById('info-resolution').textContent = '1920x1080';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════
+
+window.addEventListener('DOMContentLoaded', () => {
+    // Initialize all modules
+    initNavigation();
+    initScenarioField();
+    initFileImport();
+    initClearButton();
+    initProjectInfo();
+    initImages(); // Initialize images block
+
+    // Welcome log
+    addLog('success', 'YouTube Automation Studio запущен');
+    addLog('info', 'Готов к работе. Начните с создания сценария.');
+
+    // Check backend health
+    checkBackendHealth();
 });
+
+async function checkBackendHealth() {
+    try {
+        const response = await fetch('http://localhost:5001/api/health', {
+            method: 'GET'
+        });
+
+        if (response.ok) {
+            addLog('success', 'Подключение к Flask API: OK');
+        } else {
+            addLog('warning', 'Flask API отвечает с ошибкой');
+        }
+    } catch (error) {
+        addLog('warning', 'Flask API недоступен (порт 5001)');
+        console.warn('Backend health check failed:', error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BACKEND READY LISTENER (ELECTRON)
+// ═══════════════════════════════════════════════════════════════
+
+if (window.electronAPI) {
+    window.electronAPI.onBackendReady(() => {
+        addLog('success', 'Backend сервер готов');
+    });
+}

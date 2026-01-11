@@ -1,0 +1,821 @@
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS PAGE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Settings Header */
+.settings-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    border-bottom: 1px solid #2a2a2a;
+    background: #1a1a1a;
+}
+
+.settings-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.back-button {
+    padding: 10px 20px;
+    background: #2a2a2a;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background: #3a3a3a;
+    transform: translateX(-3px);
+}
+
+/* Tabs Navigation */
+.tabs {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #2a2a2a;
+    overflow-x: auto;
+}
+
+.tab {
+    padding: 12px 24px;
+    background: #2a2a2a;
+    border: none;
+    border-radius: 8px;
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.tab:hover {
+    background: #3a3a3a;
+    color: #aaa;
+}
+
+.tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+}
+
+/* Tab Content */
+.tab-content {
+    padding: 30px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tab-panel h2 {
+    font-size: 20px;
+    margin-bottom: 25px;
+    color: #fff;
+}
+
+/* Setting Groups */
+.setting-group {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #1e1e1e;
+    border-radius: 10px;
+    border: 1px solid #2a2a2a;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 10px;
+    color: #ddd;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.setting-group input[type="text"],
+.setting-group input[type="password"],
+.setting-group select {
+    width: 100%;
+    padding: 12px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.setting-group input[type="text"]:focus,
+.setting-group input[type="password"]:focus,
+.setting-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.setting-group input[readonly] {
+    background: #252525;
+    cursor: not-allowed;
+}
+
+.hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Input with Button */
+.input-with-button {
+    display: flex;
+    gap: 10px;
+}
+
+.input-with-button input {
+    flex: 1;
+}
+
+.input-with-button button {
+    padding: 12px 20px;
+    background: #667eea;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.input-with-button button:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #3a3a3a;
+    transition: 0.4s;
+    border-radius: 26px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+/* API Sections */
+.api-section {
+    margin-bottom: 30px;
+    padding: 25px;
+    background: #1e1e1e;
+    border-radius: 12px;
+    border: 1px solid #2a2a2a;
+}
+
+.api-section h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.api-description {
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+.api-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #252525;
+    border-radius: 8px;
+}
+
+.api-stats .stat {
+    font-size: 13px;
+    color: #aaa;
+}
+
+.api-stats .stat strong {
+    color: #667eea;
+    font-size: 16px;
+    margin-left: 5px;
+}
+
+/* API Keys List */
+.api-keys-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #252525;
+    border-radius: 8px;
+}
+
+.api-keys-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.api-keys-list::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    border-radius: 4px;
+}
+
+.api-keys-list::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 4px;
+}
+
+.api-keys-list::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+}
+
+.api-key-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #1e1e1e;
+    border-radius: 8px;
+    border: 1px solid #2a2a2a;
+}
+
+.key-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.key-value {
+    font-family: monospace;
+    font-size: 12px;
+    color: #888;
+}
+
+.key-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.key-status.active {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.key-status.inactive {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.key-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.key-actions button {
+    padding: 6px 12px;
+    background: #2a2a2a;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.key-actions button:hover {
+    background: #3a3a3a;
+}
+
+.key-actions button.delete {
+    color: #ef4444;
+}
+
+.key-actions button.delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.loading {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+    font-size: 14px;
+}
+
+.add-key-btn {
+    padding: 10px 20px;
+    background: #2a2a2a;
+    border: 1px dashed #3a3a3a;
+    border-radius: 8px;
+    color: #aaa;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.add-key-btn:hover {
+    background: #3a3a3a;
+    border-color: #667eea;
+    color: #667eea;
+}
+
+/* Theme Selector */
+.theme-selector {
+    display: flex;
+    gap: 15px;
+}
+
+.theme-option {
+    flex: 1;
+    padding: 20px;
+    background: #2a2a2a;
+    border: 2px solid #2a2a2a;
+    border-radius: 10px;
+    color: #aaa;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.theme-option:hover {
+    background: #3a3a3a;
+    border-color: #3a3a3a;
+}
+
+.theme-option.active {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+    color: #667eea;
+}
+
+/* Checkbox Items */
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #252525;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.checkbox-item:hover {
+    background: #2a2a2a;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Test Button */
+.test-button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.test-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.test-button:active {
+    transform: translateY(0);
+}
+
+/* Settings Actions */
+.settings-actions {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    border-top: 1px solid #2a2a2a;
+    background: #1a1a1a;
+    position: sticky;
+    bottom: 0;
+}
+
+.primary-button {
+    flex: 2;
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.secondary-button {
+    flex: 1;
+    padding: 14px 28px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.secondary-button:hover {
+    background: #3a3a3a;
+    border-color: #4a4a4a;
+}
+
+.danger-button {
+    flex: 1;
+    padding: 14px 28px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: #ef4444;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.danger-button:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab {
+        flex: 1 1 calc(50% - 5px);
+        min-width: 140px;
+    }
+
+    .settings-actions {
+        flex-direction: column;
+    }
+
+    .primary-button,
+    .secondary-button,
+    .danger-button {
+        width: 100%;
+    }
+
+    .api-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .theme-selector {
+        flex-direction: column;
+    }
+
+    .input-with-button {
+        flex-direction: column;
+    }
+
+    .input-with-button button {
+        width: 100%;
+    }
+}
+
+/* Light Theme Support (for future) */
+body.light-theme .settings-header,
+body.light-theme .tabs,
+body.light-theme .tab-content {
+    background: #f5f5f5;
+}
+
+body.light-theme .tab {
+    background: #e0e0e0;
+    color: #555;
+}
+
+body.light-theme .tab:hover {
+    background: #d0d0d0;
+    color: #333;
+}
+
+body.light-theme .setting-group,
+body.light-theme .api-section {
+    background: white;
+    border-color: #e0e0e0;
+}
+
+body.light-theme .setting-group input,
+body.light-theme .setting-group select {
+    background: #f5f5f5;
+    border-color: #ddd;
+    color: #333;
+}
+
+body.light-theme .api-stats,
+body.light-theme .api-keys-list,
+body.light-theme .checkbox-item {
+    background: #f9f9f9;
+}
+
+body.light-theme .api-key-item {
+    background: white;
+    border-color: #e0e0e0;
+}
+
+body.light-theme .key-value {
+    color: #555;
+}
+
+body.light-theme .hint {
+    color: #777;
+}
+
+body.light-theme .loading {
+    color: #777;
+}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TELEGRAM INTEGRATION STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Статус подключения */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+}
+
+.status-indicator.online {
+    background: #4ade80;
+    box-shadow: 0 0 10px #4ade80;
+}
+
+.status-indicator.offline {
+    background: #f87171;
+    box-shadow: 0 0 10px #f87171;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Кнопка помощи */
+.help-btn {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: rgba(102, 126, 234, 0.2);
+    border: 1px solid rgba(102, 126, 234, 0.5);
+    border-radius: 8px;
+    color: #a5b4fc;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.help-btn:hover {
+    background: rgba(102, 126, 234, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Чекбоксы с описанием */
+.checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.checkbox-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.checkbox-title {
+    color: white;
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.checkbox-desc {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+}
+
+/* Редактор шаблонов */
+.template-editor {
+    margin-bottom: 20px;
+}
+
+.template-editor label {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+
+.template-editor textarea {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    resize: vertical;
+}
+
+.template-editor textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Secondary button */
+.secondary-button {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.secondary-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Команды бота */
+.commands-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.command-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.command-item code {
+    padding: 4px 12px;
+    background: rgba(102, 126, 234, 0.2);
+    border-radius: 6px;
+    color: #a5b4fc;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.command-item span {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+/* Кнопка теста */
+.test-button {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+}
+
+.test-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.test-button:active {
+    transform: translateY(0);
+}
+
+/* Setting group h3 */
+.setting-group h3 {
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #fff;
+}
