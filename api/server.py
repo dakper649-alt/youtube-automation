@@ -927,6 +927,102 @@ def delete_reference(reference_id):
         return jsonify({'error': str(e)}), 500
 
 # ═══════════════════════════════════════════════════════════════
+# IMAGE GENERATION (Whisk Integration)
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/generate-images', methods=['POST'])
+def generate_images():
+    """
+    Генерация изображений для сцен через Whisk AI
+
+    Request body:
+        {
+            "scenes": [{"index": 0, "text": "...", "sentences": ["..."]}],
+            "global_style": "digital art, vibrant colors...",
+            "prompt_mode": "auto",
+            "service": "whisk",
+            "references": ["/path/to/ref1.jpg", ...],
+            "auto_download": true,
+            "whisk_retries": 2,
+            "retry_delay": 5
+        }
+
+    Response:
+        {
+            "success": true,
+            "images": [
+                {"scene_index": 0, "path": "/path/to/image.png", "prompt": "..."},
+                ...
+            ],
+            "stats": {
+                "total_images": 5,
+                "successful": 5,
+                "failed": 0,
+                "total_time": 60.5
+            },
+            "output_dir": "/path/to/output"
+        }
+    """
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        # Валидация
+        scenes = data.get('scenes', [])
+        if not scenes:
+            return jsonify({'error': 'Scenes are required'}), 400
+
+        global_style = data.get('global_style', '')
+        prompt_mode = data.get('prompt_mode', 'auto')
+        service = data.get('service', 'whisk')
+        references = data.get('references', [])
+        auto_download = data.get('auto_download', True)
+        whisk_retries = data.get('whisk_retries', 2)
+        retry_delay = data.get('retry_delay', 5)
+
+        print(f"\n🎬 GENERATE IMAGES REQUEST")
+        print(f"   Scenes: {len(scenes)}")
+        print(f"   Global style: {global_style[:50] if global_style else 'None'}...")
+        print(f"   Service: {service}")
+        print(f"   References: {len(references)}")
+        print(f"   Retries: {whisk_retries}")
+
+        # Импорт WhiskGenerator
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.whisk_generator import WhiskGenerator
+
+        # Создать генератор
+        generator = WhiskGenerator(
+            retries=whisk_retries,
+            retry_delay=retry_delay
+        )
+
+        # Запустить генерацию
+        result = generator.generate_images_for_scenes(
+            scenes=scenes,
+            global_style=global_style,
+            references=references,
+            auto_download=auto_download
+        )
+
+        print(f"✅ Generation complete!")
+        print(f"   Images created: {result['stats']['successful']}/{result['stats']['total_images']}")
+        print(f"   Total time: {result['stats']['total_time']}s")
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"❌ Error in generate_images: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+# ═══════════════════════════════════════════════════════════════
 
 if __name__ == '__main__':
     print("\n" + "=" * 80)

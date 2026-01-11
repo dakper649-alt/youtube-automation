@@ -510,6 +510,128 @@ function removeReference(index) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// IMAGE GENERATION
+// ═══════════════════════════════════════════════════════════════
+
+function splitIntoScenes(text, distributionValue) {
+    /**
+     * Разбить сценарий на сцены для генерации изображений
+     * @param {string} text - Текст сценария
+     * @param {number} distributionValue - Количество предложений на 1 изображение (1, 2, или 3)
+     * @returns {Array} - Массив сцен [{text: "...", index: 0}, ...]
+     */
+
+    if (!text || !text.trim()) {
+        return [];
+    }
+
+    // Разбить на предложения
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+
+    // Группировать предложения по distributionValue
+    const scenes = [];
+    for (let i = 0; i < sentences.length; i += distributionValue) {
+        const sceneSentences = sentences.slice(i, i + distributionValue);
+        const sceneText = sceneSentences.join('. ').trim() + '.';
+
+        scenes.push({
+            index: scenes.length,
+            text: sceneText,
+            sentences: sceneSentences
+        });
+    }
+
+    return scenes;
+}
+
+async function generateImagesForVideo() {
+    /**
+     * Главная функция генерации изображений для видео
+     * Читает настройки из UI и запускает процесс генерации
+     */
+
+    try {
+        // 1. Получить сценарий
+        const scenarioText = document.getElementById('scenario-input').value;
+        if (!scenarioText || !scenarioText.trim()) {
+            alert('⚠️ Сначала введите сценарий');
+            return;
+        }
+
+        // 2. Получить настройки
+        const distributionValue = parseInt(document.querySelector('input[name="image-distribution"]:checked').value);
+        const globalStyle = document.getElementById('global-style-input').value || '';
+        const promptMode = document.querySelector('input[name="prompt-mode"]:checked').value;
+        const imageService = document.querySelector('input[name="image-service"]:checked').value;
+        const useReferences = document.getElementById('use-references').checked;
+        const autoDownload = document.getElementById('auto-download').checked;
+        const whiskRetries = parseInt(document.getElementById('whisk-retries').value);
+        const retryDelay = parseInt(document.getElementById('retry-delay').value);
+
+        // 3. Разбить сценарий на сцены
+        addLog('info', '📝 Разбиение сценария на сцены...');
+        const scenes = splitIntoScenes(scenarioText, distributionValue);
+
+        if (scenes.length === 0) {
+            alert('⚠️ Не удалось разбить сценарий на сцены');
+            return;
+        }
+
+        addLog('success', `✅ Сценарий разбит на ${scenes.length} сцен`);
+
+        // 4. Подготовить референсы
+        const referencePaths = useReferences ? references.map(ref => ref.serverPath) : [];
+
+        if (useReferences && referencePaths.length > 0) {
+            addLog('info', `📎 Использую ${referencePaths.length} референсов`);
+        }
+
+        // 5. Отправить запрос на backend
+        addLog('info', `🚀 Запуск генерации изображений (сервис: ${imageService === 'whisk' ? 'Whisk AI' : 'Telegram Bot'})...`);
+
+        const response = await fetch('http://localhost:5001/api/generate-images', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                scenes: scenes,
+                global_style: globalStyle,
+                prompt_mode: promptMode,
+                service: imageService,
+                references: referencePaths,
+                auto_download: autoDownload,
+                whisk_retries: whiskRetries,
+                retry_delay: retryDelay
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Ошибка генерации изображений');
+        }
+
+        const result = await response.json();
+
+        // 6. Обработать результат
+        addLog('success', `✅ Генерация завершена!`);
+        addLog('info', `📊 Создано изображений: ${result.images.length}`);
+        addLog('info', `⏱️ Общее время: ${result.stats.total_time}с`);
+        addLog('info', `📁 Папка с результатами: ${result.output_dir}`);
+
+        // Обновить информацию о проекте
+        document.getElementById('info-images').textContent = `${result.images.length} шт`;
+
+        alert(`✅ Генерация завершена!\n\nСоздано изображений: ${result.images.length}\nВремя: ${result.stats.total_time}с`);
+
+    } catch (error) {
+        addLog('error', `❌ Ошибка генерации: ${error.message}`);
+        alert(`❌ Ошибка генерации:\n${error.message}`);
+        console.error('Generation error:', error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // PROJECT INFO PANEL
 // ═══════════════════════════════════════════════════════════════
 
