@@ -97,6 +97,18 @@
                                 </button>
                             </div>
 
+                            <!-- Информация о сценах -->
+                            <div class="scenario-info-box">
+                                <p class="info-text">
+                                    💡 Сценарий будет автоматически разбит на сцены для визуальной генерации
+                                </p>
+
+                                <button id="show-scenes-btn" class="btn-secondary btn-small" style="display: none;">
+                                    <span class="btn-icon">🔍</span>
+                                    <span class="btn-text">Показать сцены (для продвинутых)</span>
+                                </button>
+                            </div>
+
                             <input type="file" id="file-input" accept=".txt,.docx" style="display: none;">
                         </div>
                     </div>
@@ -396,6 +408,34 @@
 
         </div>
 
+    </div>
+
+    <!-- Модальное окно со сценами -->
+    <div id="scenes-modal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>🎬 Структура сцен</h2>
+                <button class="modal-close" id="close-scenes-modal">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="scenes-info">
+                    <p class="info-text">
+                        Сценарий автоматически разбит на <span id="scenes-count">0</span> сцен.
+                        Каждая сцена будет визуализирована отдельным изображением.
+                    </p>
+                </div>
+
+                <div id="scenes-list" class="scenes-list">
+                    <!-- Сцены добавляются динамически -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" id="close-scenes-modal-btn">Закрыть</button>
+            </div>
+        </div>
     </div>
 
     <!-- Библиотека для чтения DOCX -->

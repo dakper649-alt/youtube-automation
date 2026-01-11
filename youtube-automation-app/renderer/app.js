@@ -520,6 +520,50 @@ function removeReference(index) {
 // IMAGE GENERATION
 // ═══════════════════════════════════════════════════════════════
 
+let currentScenes = [];
+
+function generateScenesStructure(scenario, distribution, globalStyle) {
+    /**
+     * ЗАГЛУШКА: Разбивает сценарий на сцены
+     * ПОЗЖЕ: Будет использовать OpenRouter API
+     *
+     * @param {string} scenario - текст сценария
+     * @param {number} distribution - 1, 2 или 3 предложения на сцену
+     * @param {string} globalStyle - базовый стиль
+     * @returns {Array} массив сцен
+     */
+
+    // Разбить на предложения
+    const sentences = scenario
+        .split(/[.!?]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 10);
+
+    const scenes = [];
+    const dist = parseInt(distribution);
+
+    for (let i = 0; i < sentences.length; i += dist) {
+        const sceneText = sentences
+            .slice(i, i + dist)
+            .join('. ') + '.';
+
+        // ЗАГЛУШКА: Простая генерация промпта
+        // ПОЗЖЕ: OpenRouter API создаст визуальный промпт
+        const imagePrompt = sceneText.substring(0, 100) + (globalStyle ? `, ${globalStyle}` : '');
+
+        scenes.push({
+            scene_id: scenes.length + 1,
+            text: sceneText,
+            visual_meaning: `Визуализация сцены ${scenes.length + 1}`,
+            image_prompt: imagePrompt,
+            emotion: 'neutral',
+            camera_motion: 'static'
+        });
+    }
+
+    return scenes;
+}
+
 function splitIntoScenes(text, distributionValue) {
     /**
      * Разбить сценарий на сцены для генерации изображений
@@ -553,8 +597,7 @@ function splitIntoScenes(text, distributionValue) {
 
 async function generateImagesForVideo() {
     /**
-     * Главная функция генерации изображений для видео
-     * Читает настройки из UI и запускает процесс генерации
+     * ОБНОВЛЁННАЯ версия с генерацией сцен
      */
 
     try {
@@ -564,6 +607,8 @@ async function generateImagesForVideo() {
             alert('⚠️ Сначала введите сценарий');
             return;
         }
+
+        addLog('info', '🚀 Запуск генерации видео...');
 
         // 2. Получить настройки
         const distributionValue = parseInt(document.querySelector('input[name="image-distribution"]:checked').value);
@@ -575,18 +620,21 @@ async function generateImagesForVideo() {
         const whiskRetries = parseInt(document.getElementById('whisk-retries').value);
         const retryDelay = parseInt(document.getElementById('retry-delay').value);
 
-        // 3. Разбить сценарий на сцены
-        addLog('info', '📝 Разбиение сценария на сцены...');
-        const scenes = splitIntoScenes(scenarioText, distributionValue);
+        // 3. Генерация структуры сцен
+        addLog('info', '🎬 Генерация структуры сцен...');
+        currentScenes = generateScenesStructure(scenarioText, distributionValue, globalStyle);
 
-        if (scenes.length === 0) {
+        if (currentScenes.length === 0) {
             alert('⚠️ Не удалось разбить сценарий на сцены');
             return;
         }
 
-        addLog('success', `✅ Сценарий разбит на ${scenes.length} сцен`);
+        addLog('success', `✅ Создано сцен: ${currentScenes.length}`);
 
-        // 4. Подготовить референсы
+        // Показать кнопку "Показать сцены"
+        document.getElementById('show-scenes-btn').style.display = 'inline-flex';
+
+        // 4. Подготовить referencer
         const referencePaths = useReferences ? references.map(ref => ref.serverPath) : [];
 
         if (useReferences && referencePaths.length > 0) {
@@ -594,7 +642,8 @@ async function generateImagesForVideo() {
         }
 
         // 5. Отправить запрос на backend
-        addLog('info', `🚀 Запуск генерации изображений (сервис: ${imageService === 'whisk' ? 'Whisk AI' : 'Telegram Bot'})...`);
+        addLog('info', `🎨 Генерация ${currentScenes.length} изображений...`);
+        addLog('info', `🚀 Сервис: ${imageService === 'whisk' ? 'Whisk AI' : 'Telegram Bot'}`);
 
         const response = await fetch('http://localhost:5001/api/generate-images', {
             method: 'POST',
@@ -602,7 +651,7 @@ async function generateImagesForVideo() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                scenes: scenes,
+                scenes: currentScenes,
                 global_style: globalStyle,
                 prompt_mode: promptMode,
                 service: imageService,
@@ -639,6 +688,69 @@ async function generateImagesForVideo() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// СЦЕНЫ - МОДАЛЬНОЕ ОКНО
+// ═══════════════════════════════════════════════════════════════
+
+function showScenesModal() {
+    /**
+     * Показать модальное окно со сценами
+     */
+
+    const modal = document.getElementById('scenes-modal');
+    const scenesList = document.getElementById('scenes-list');
+    const scenesCount = document.getElementById('scenes-count');
+
+    if (!currentScenes || currentScenes.length === 0) {
+        alert('Сначала введите сценарий и нажмите кнопку генерации');
+        return;
+    }
+
+    // Обновить счётчик
+    scenesCount.textContent = currentScenes.length;
+
+    // Очистить список
+    scenesList.innerHTML = '';
+
+    // Добавить сцены
+    currentScenes.forEach(scene => {
+        const sceneCard = document.createElement('div');
+        sceneCard.className = 'scene-card';
+
+        sceneCard.innerHTML = `
+            <div class="scene-header">
+                <div class="scene-number">${scene.scene_id}</div>
+                <h3 class="scene-title">Сцена ${scene.scene_id}</h3>
+            </div>
+
+            <div class="scene-field">
+                <div class="scene-field-label">Текст озвучки</div>
+                <div class="scene-field-value">${scene.text}</div>
+            </div>
+
+            <div class="scene-field">
+                <div class="scene-field-label">Визуальный смысл</div>
+                <div class="scene-field-value">${scene.visual_meaning}</div>
+            </div>
+
+            <div class="scene-field">
+                <div class="scene-field-label">Промпт изображения</div>
+                <div class="scene-field-value scene-prompt">${scene.image_prompt}</div>
+            </div>
+        `;
+
+        scenesList.appendChild(sceneCard);
+    });
+
+    // Показать модальное окно
+    modal.style.display = 'flex';
+}
+
+function closeScenesModal() {
+    const modal = document.getElementById('scenes-modal');
+    modal.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════
 // PROJECT INFO PANEL
 // ═══════════════════════════════════════════════════════════════
 
@@ -662,6 +774,24 @@ window.addEventListener('DOMContentLoaded', () => {
     initClearButton();
     initProjectInfo();
     initImages(); // Initialize images block
+
+    // Кнопка "Показать сцены"
+    const showScenesBtn = document.getElementById('show-scenes-btn');
+    if (showScenesBtn) {
+        showScenesBtn.addEventListener('click', showScenesModal);
+    }
+
+    // Закрытие модального окна
+    const closeButtons = document.querySelectorAll('#close-scenes-modal, #close-scenes-modal-btn');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', closeScenesModal);
+    });
+
+    // Закрытие по клику на оверлей
+    const modalOverlay = document.querySelector('#scenes-modal .modal-overlay');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeScenesModal);
+    }
 
     // Welcome log
     addLog('success', 'YouTube Automation Studio запущен');
