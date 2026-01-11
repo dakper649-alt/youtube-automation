@@ -846,6 +846,88 @@ def delete_video(video_id):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ═══════════════════════════════════════════════════════════════
+# REFERENCE IMAGES (для блока изображений)
+# ═══════════════════════════════════════════════════════════════
+
+from werkzeug.utils import secure_filename
+
+# Папка для референсов
+REFERENCES_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'backend', 'assets', 'references')
+os.makedirs(REFERENCES_FOLDER, exist_ok=True)
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/api/upload-reference', methods=['POST'])
+def upload_reference():
+    """Загрузка референса (персонаж или стиль)"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Нет файла'}), 400
+
+        file = request.files['file']
+        ref_type = request.form.get('type', 'character')
+
+        if file.filename == '':
+            return jsonify({'error': 'Файл не выбран'}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'Неподдерживаемый формат'}), 400
+
+        # Генерировать уникальное имя
+        file_ext = file.filename.rsplit('.', 1)[1].lower()
+        unique_id = str(uuid.uuid4())
+        filename = f"{ref_type}_{unique_id}.{file_ext}"
+
+        # Сохранить файл
+        filepath = os.path.join(REFERENCES_FOLDER, filename)
+        file.save(filepath)
+
+        print(f"✅ Reference uploaded: {filename}")
+
+        return jsonify({
+            'success': True,
+            'id': unique_id,
+            'path': filepath,
+            'filename': filename
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"❌ Error uploading reference: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/delete-reference/<reference_id>', methods=['DELETE'])
+def delete_reference(reference_id):
+    """Удаление референса"""
+    try:
+        # Найти файлы с этим ID
+        deleted = False
+        for filename in os.listdir(REFERENCES_FOLDER):
+            if reference_id in filename:
+                filepath = os.path.join(REFERENCES_FOLDER, filename)
+                os.remove(filepath)
+                print(f"🗑️ Reference deleted: {filename}")
+                deleted = True
+
+        if not deleted:
+            return jsonify({'error': 'Файл не найден'}), 404
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        print(f"❌ Error deleting reference: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ═══════════════════════════════════════════════════════════════
+
 if __name__ == '__main__':
     print("\n" + "=" * 80)
     print("🚀 FLASK API SERVER")

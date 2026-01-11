@@ -101,13 +101,138 @@
                         </div>
                     </div>
 
-                    <!-- БЛОК 2-8: Заглушки для следующих этапов -->
-                    <div class="gen-block upcoming-block">
+                    <!-- БЛОК 2: ИЗОБРАЖЕНИЯ -->
+                    <div class="gen-block images-block">
                         <div class="block-header">
                             <h2>🎨 Изображения</h2>
                         </div>
+
                         <div class="block-content">
-                            <p class="coming-soon-text">Следующий этап разработки</p>
+
+                            <!-- Распределение изображений -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">📊 Распределение изображений</h3>
+
+                                <div class="distribution-options">
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-distribution" value="1" />
+                                        <div class="radio-content">
+                                            <span class="radio-title">1 изображение на 1 предложение</span>
+                                            <span class="radio-desc">Максимальная детализация (много изображений)</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-distribution" value="2" checked />
+                                        <div class="radio-content">
+                                            <span class="radio-title">1 изображение на 2 предложения</span>
+                                            <span class="radio-desc">Рекомендуется (баланс качества и скорости)</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-distribution" value="3" />
+                                        <div class="radio-content">
+                                            <span class="radio-title">1 изображение на 3 предложения</span>
+                                            <span class="radio-desc">Меньше изображений (быстрая генерация)</span>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <!-- Статистика -->
+                                <div class="images-estimate">
+                                    <span class="estimate-icon">💡</span>
+                                    <span id="images-count-estimate">Примерно будет создано: ~0 изображений</span>
+                                </div>
+                            </div>
+
+                            <!-- Референсы -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">📎 Референсы (опционально)</h3>
+                                <p class="subsection-hint">
+                                    Загрузите изображения персонажей или примеры стиля для консистентности
+                                </p>
+
+                                <div class="reference-controls">
+                                    <button id="add-character-btn" class="btn-add-reference">
+                                        <span class="btn-icon">👤</span>
+                                        <span class="btn-text">Добавить персонажа</span>
+                                    </button>
+                                    <button id="add-style-btn" class="btn-add-reference">
+                                        <span class="btn-icon">🎨</span>
+                                        <span class="btn-text">Добавить стиль</span>
+                                    </button>
+                                </div>
+
+                                <!-- Скрытый input для загрузки файлов -->
+                                <input type="file" id="reference-file-input" accept="image/*" style="display: none;" />
+
+                                <!-- Список загруженных референсов -->
+                                <div id="references-list" class="references-grid">
+                                    <!-- Референсы добавляются динамически -->
+                                </div>
+                            </div>
+
+                            <!-- Сервис генерации -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">🌟 Сервис генерации</h3>
+
+                                <div class="service-options">
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-service" value="whisk" checked />
+                                        <div class="radio-content">
+                                            <span class="radio-title">Whisk AI (через браузер)</span>
+                                            <span class="radio-desc">Высокое качество, консистентные персонажи</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="radio-option">
+                                        <input type="radio" name="image-service" value="telegram" />
+                                        <div class="radio-content">
+                                            <span class="radio-title">Telegram Bot (fallback)</span>
+                                            <span class="radio-desc">Запасной вариант при сбое Whisk</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Настройки -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">⚙️ Настройки генерации</h3>
+
+                                <div class="settings-group">
+                                    <label class="checkbox-setting">
+                                        <input type="checkbox" id="use-references" checked />
+                                        <span>Использовать референсы для консистентности</span>
+                                    </label>
+
+                                    <label class="checkbox-setting">
+                                        <input type="checkbox" id="auto-download" checked />
+                                        <span>Автоматически скачивать результаты</span>
+                                    </label>
+                                </div>
+
+                                <div class="settings-row">
+                                    <div class="setting-item">
+                                        <label>Попытки Whisk перед fallback:</label>
+                                        <select id="whisk-retries">
+                                            <option value="1">1 попытка</option>
+                                            <option value="2" selected>2 попытки</option>
+                                            <option value="3">3 попытки</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="setting-item">
+                                        <label>Задержка между попытками:</label>
+                                        <select id="retry-delay">
+                                            <option value="3">3 секунды</option>
+                                            <option value="5" selected>5 секунд</option>
+                                            <option value="10">10 секунд</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 

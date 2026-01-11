@@ -89,6 +89,11 @@ function updateScenarioStats() {
 
     // Update project info panel
     document.getElementById('info-language').textContent = language;
+
+    // Update images estimate
+    if (typeof updateImagesEstimate === 'function') {
+        updateImagesEstimate();
+    }
 }
 
 function detectLanguage(text) {
@@ -343,6 +348,168 @@ function escapeHtml(text) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// IMAGES BLOCK
+// ═══════════════════════════════════════════════════════════════
+
+let references = []; // Массив референсов
+let currentReferenceType = null; // 'character' или 'style'
+
+function initImages() {
+    // Обновление оценки количества изображений
+    const distributionRadios = document.querySelectorAll('input[name="image-distribution"]');
+    distributionRadios.forEach(radio => {
+        radio.addEventListener('change', updateImagesEstimate);
+    });
+
+    // Кнопки добавления референсов
+    document.getElementById('add-character-btn').addEventListener('click', () => {
+        currentReferenceType = 'character';
+        document.getElementById('reference-file-input').click();
+    });
+
+    document.getElementById('add-style-btn').addEventListener('click', () => {
+        currentReferenceType = 'style';
+        document.getElementById('reference-file-input').click();
+    });
+
+    // Загрузка референса
+    document.getElementById('reference-file-input').addEventListener('change', handleReferenceUpload);
+
+    // Начальная оценка
+    updateImagesEstimate();
+}
+
+function updateImagesEstimate() {
+    const text = document.getElementById('scenario-input').value;
+    if (!text) {
+        document.getElementById('images-count-estimate').textContent = 'Примерно будет создано: ~0 изображений';
+        return;
+    }
+
+    // Подсчёт предложений (примерный - по точкам, вопросам, восклицаниям)
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+    const sentenceCount = sentences.length;
+
+    // Получить распределение
+    const distributionValue = parseInt(document.querySelector('input[name="image-distribution"]:checked').value);
+
+    // Рассчитать количество изображений
+    const imagesCount = Math.ceil(sentenceCount / distributionValue);
+
+    document.getElementById('images-count-estimate').textContent =
+        `Примерно будет создано: ~${imagesCount} изображений`;
+
+    addLog('info', `📊 Оценка: ${imagesCount} изображений (${sentenceCount} предложений / ${distributionValue})`);
+}
+
+async function handleReferenceUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Проверка типа файла
+    if (!file.type.startsWith('image/')) {
+        alert('Пожалуйста, выберите изображение');
+        return;
+    }
+
+    // Проверка размера (макс 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('Файл слишком большой (макс 10MB)');
+        return;
+    }
+
+    addLog('info', `📎 Загрузка референса: ${file.name}`);
+
+    try {
+        // Создать превью
+        const imageUrl = await readFileAsDataURL(file);
+
+        // Отправить на сервер
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', currentReferenceType);
+
+        const response = await fetch('http://localhost:5001/api/upload-reference', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки на сервер');
+        }
+
+        const result = await response.json();
+
+        // Добавить в массив референсов
+        const reference = {
+            id: result.id,
+            type: currentReferenceType,
+            name: file.name,
+            url: imageUrl,
+            serverPath: result.path
+        };
+
+        references.push(reference);
+        renderReferences();
+
+        addLog('success', `✅ Референс загружен: ${file.name}`);
+
+    } catch (error) {
+        addLog('error', `❌ Ошибка загрузки референса: ${error.message}`);
+        alert(`Ошибка загрузки:\n${error.message}`);
+    }
+
+    // Очистить input
+    event.target.value = '';
+}
+
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(new Error('Ошибка чтения файла'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderReferences() {
+    const container = document.getElementById('references-list');
+
+    if (references.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = references.map((ref, index) => `
+        <div class="reference-card">
+            <img src="${ref.url}" alt="${ref.name}" class="reference-image">
+            <div class="reference-info">
+                <div class="reference-type">${ref.type === 'character' ? '👤 Персонаж' : '🎨 Стиль'}</div>
+                <div class="reference-name">${ref.name}</div>
+            </div>
+            <button class="reference-remove" onclick="removeReference(${index})">✕</button>
+        </div>
+    `).join('');
+}
+
+function removeReference(index) {
+    const ref = references[index];
+
+    if (confirm(`Удалить референс "${ref.name}"?`)) {
+        // Удалить с сервера
+        fetch(`http://localhost:5001/api/delete-reference/${ref.id}`, {
+            method: 'DELETE'
+        }).catch(err => console.error('Ошибка удаления с сервера:', err));
+
+        // Удалить из массива
+        references.splice(index, 1);
+        renderReferences();
+
+        addLog('info', `🗑️ Референс удалён: ${ref.name}`);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // PROJECT INFO PANEL
 // ═══════════════════════════════════════════════════════════════
 
@@ -365,6 +532,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initFileImport();
     initClearButton();
     initProjectInfo();
+    initImages(); // Initialize images block
 
     // Welcome log
     addLog('success', 'YouTube Automation Studio запущен');
