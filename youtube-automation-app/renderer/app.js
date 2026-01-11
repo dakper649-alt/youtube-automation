@@ -375,6 +375,13 @@ function initImages() {
     // Загрузка референса
     document.getElementById('reference-file-input').addEventListener('change', handleReferenceUpload);
 
+    // Кнопка запуска генерации
+    const generateBtn = document.getElementById('start-generation-btn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', generateImagesForVideo);
+        addLog('info', '🚀 Кнопка генерации подключена');
+    }
+
     // Начальная оценка
     updateImagesEstimate();
 }
