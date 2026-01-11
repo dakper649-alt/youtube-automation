@@ -197,6 +197,32 @@ body {
     color: rgba(255, 255, 255, 0.3);
 }
 
+/* === GLOBAL STYLE INPUT === */
+.global-style-input {
+    width: 100%;
+    min-height: 80px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.5;
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+.global-style-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.global-style-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
 /* === SCENARIO STATS BAR === */
 .scenario-stats-bar {
     display: flex;

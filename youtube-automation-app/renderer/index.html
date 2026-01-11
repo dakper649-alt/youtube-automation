@@ -146,6 +146,43 @@
                                 </div>
                             </div>
 
+                            <!-- Базовый стиль -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">🎨 Базовый стиль</h3>
+                                <p class="subsection-hint">
+                                    Этот стиль будет применён ко всем изображениям
+                                </p>
+
+                                <textarea
+                                    id="global-style-input"
+                                    class="global-style-input"
+                                    placeholder="digital art, vibrant colors, cinematic lighting, high quality, detailed, 4k..."
+                                ></textarea>
+                            </div>
+
+                            <!-- Режим генерации промптов -->
+                            <div class="subsection">
+                                <h3 class="subsection-title">🤖 Режим генерации промптов</h3>
+
+                                <div class="service-options">
+                                    <label class="radio-option">
+                                        <input type="radio" name="prompt-mode" value="auto" checked />
+                                        <div class="radio-content">
+                                            <span class="radio-title">Автоматически из сценария</span>
+                                            <span class="radio-desc">AI создаст промпты на основе текста сценария</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="radio-option" style="opacity: 0.5; cursor: not-allowed;">
+                                        <input type="radio" name="prompt-mode" value="manual" disabled />
+                                        <div class="radio-content">
+                                            <span class="radio-title">Вручную для каждой сцены (скоро)</span>
+                                            <span class="radio-desc">Будет доступно в следующей версии</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
                             <!-- Референсы -->
                             <div class="subsection">
                                 <h3 class="subsection-title">📎 Референсы (опционально)</h3>
