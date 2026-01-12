@@ -77,12 +77,6 @@ def get_progress(task_id):
 
     return jsonify(tasks[task_id])
 
-@app.route('/api/videos', methods=['GET'])
-def get_videos():
-    """Получить список готовых видео"""
-    # Пока возвращаем пустой список
-    return jsonify({'videos': []})
-
 def real_generation(task_id, data):
     """
     РЕАЛЬНАЯ генерация видео через MainOrchestrator
