@@ -298,59 +298,35 @@
                         <div class="block-header">
                             <h2 class="block-title">🎙️ Озвучка</h2>
                             <p class="block-description">
-                                Выберите голос для озвучки видео. Доступно 20+ профессиональных голосов ElevenLabs.
+                                Выберите голос для озвучки видео
                             </p>
                         </div>
 
                         <div class="block-content">
 
-                            <!-- Статус загрузки -->
-                            <div id="voices-loading" class="loading-state">
-                                <div class="spinner"></div>
-                                <p>Загрузка голосов...</p>
-                            </div>
+                            <!-- Компактное отображение -->
+                            <div class="subsection">
 
-                            <!-- Ошибка загрузки -->
-                            <div id="voices-error" class="error-state" style="display: none;">
-                                <p>❌ Ошибка загрузки голосов</p>
-                                <button class="btn-secondary" id="retry-voices-btn">Повторить</button>
-                            </div>
+                                <!-- Текущий голос -->
+                                <div id="selected-voice-display" class="selected-voice-display">
+                                    <div class="selected-voice-info">
+                                        <span class="selected-voice-icon">🎤</span>
+                                        <div>
+                                            <div class="selected-voice-name" id="selected-voice-name">
+                                                Голос не выбран
+                                            </div>
+                                            <div class="selected-voice-meta" id="selected-voice-meta">
+                                                Нажмите "Выбрать голос" для выбора
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <!-- Фильтры -->
-                            <div id="voices-filters" class="subsection" style="display: none;">
-                                <h3 class="subsection-title">🎚️ Фильтры</h3>
-
-                                <div class="filter-buttons">
-                                    <button class="filter-btn active" data-filter="all">
-                                        Все (<span id="count-all">0</span>)
-                                    </button>
-                                    <button class="filter-btn" data-filter="male">
-                                        Мужские (<span id="count-male">0</span>)
-                                    </button>
-                                    <button class="filter-btn" data-filter="female">
-                                        Женские (<span id="count-female">0</span>)
+                                    <button class="btn-primary" id="open-voice-modal-btn">
+                                        <span class="btn-icon">🎙️</span>
+                                        <span class="btn-text">Выбрать голос</span>
                                     </button>
                                 </div>
-                            </div>
 
-                            <!-- Список голосов -->
-                            <div id="voices-list" class="subsection" style="display: none;">
-                                <h3 class="subsection-title">🎤 Доступные голоса</h3>
-
-                                <div id="voices-grid" class="voices-grid">
-                                    <!-- Голоса добавляются динамически через JS -->
-                                </div>
-                            </div>
-
-                            <!-- Кнопка генерации preview -->
-                            <div id="voices-preview-section" class="subsection" style="display: none;">
-                                <button class="btn-secondary" id="generate-previews-btn">
-                                    <span class="btn-icon">🎵</span>
-                                    <span class="btn-text">Сгенерировать preview для всех голосов</span>
-                                </button>
-                                <p class="hint-text">
-                                    Preview позволяют прослушать голоса перед использованием (генерация займёт несколько минут)
-                                </p>
                             </div>
 
                         </div>
@@ -498,6 +474,68 @@
             <div class="modal-footer">
                 <button class="btn-secondary" id="close-scenes-modal-btn">Закрыть</button>
             </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ВЫБОРА ГОЛОСА -->
+    <div id="voice-selection-modal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+
+            <div class="modal-header">
+                <h2>🎤 Выбор голоса</h2>
+                <button class="modal-close" id="close-voice-modal">✕</button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Статус загрузки -->
+                <div id="voices-modal-loading" class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Загрузка голосов...</p>
+                </div>
+
+                <!-- Ошибка -->
+                <div id="voices-modal-error" class="error-state" style="display: none;">
+                    <p>❌ Ошибка загрузки голосов</p>
+                    <button class="btn-secondary" id="retry-voices-modal-btn">Повторить</button>
+                </div>
+
+                <!-- Контент -->
+                <div id="voices-modal-content" style="display: none;">
+
+                    <!-- Фильтры -->
+                    <div class="voices-filters">
+                        <button class="filter-btn active" data-filter="all">
+                            Все (<span id="modal-count-all">0</span>)
+                        </button>
+                        <button class="filter-btn" data-filter="male">
+                            Мужские (<span id="modal-count-male">0</span>)
+                        </button>
+                        <button class="filter-btn" data-filter="female">
+                            Женские (<span id="modal-count-female">0</span>)
+                        </button>
+                    </div>
+
+                    <!-- Сетка голосов -->
+                    <div id="voices-modal-grid" class="voices-grid">
+                        <!-- Голоса добавляются динамически -->
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" id="generate-previews-modal-btn">
+                    <span class="btn-icon">🎵</span>
+                    <span class="btn-text">Сгенерировать preview для всех</span>
+                </button>
+                <p class="hint-text">
+                    Preview позволяют прослушать голоса (генерация займёт несколько минут)
+                </p>
+            </div>
+
         </div>
     </div>
 

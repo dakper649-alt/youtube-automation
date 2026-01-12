@@ -1093,3 +1093,47 @@ body {
     color: rgba(255, 255, 255, 0.6);
     margin-top: 12px;
 }
+
+/* === КОМПАКТНОЕ ОТОБРАЖЕНИЕ ВЫБРАННОГО ГОЛОСА === */
+
+.selected-voice-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    gap: 16px;
+}
+
+.selected-voice-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.selected-voice-icon {
+    font-size: 32px;
+}
+
+.selected-voice-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.selected-voice-meta {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* === ФИЛЬТРЫ В МОДАЛЬНОМ ОКНЕ === */
+
+.voices-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}

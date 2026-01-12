@@ -768,66 +768,73 @@ function initProjectInfo() {
 
 let availableVoices = [];
 let selectedVoiceId = null;
-let currentFilter = 'all';
+let previewsGenerated = false;
 
 async function initVoicesSection() {
     /**
-     * Инициализация раздела озвучки
+     * Инициализация - НИЧЕГО не делаем при старте
+     * Голоса загружаются только при открытии модального окна
      */
 
-    const loadingState = document.getElementById('voices-loading');
-    const errorState = document.getElementById('voices-error');
-    const filtersSection = document.getElementById('voices-filters');
-    const listSection = document.getElementById('voices-list');
-    const previewSection = document.getElementById('voices-preview-section');
+    // Просто регистрируем обработчики
+    const openModalBtn = document.getElementById('open-voice-modal-btn');
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', openVoiceSelectionModal);
+    }
 
-    try {
-        // Показать загрузку
-        loadingState.style.display = 'block';
-        errorState.style.display = 'none';
+    const closeModalBtn = document.getElementById('close-voice-modal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeVoiceSelectionModal);
+    }
 
-        // Загрузить голоса
-        const success = await loadVoices();
-
-        if (success && availableVoices.length > 0) {
-            // Скрыть загрузку
-            loadingState.style.display = 'none';
-
-            // Показать интерфейс
-            filtersSection.style.display = 'block';
-            listSection.style.display = 'block';
-            previewSection.style.display = 'block';
-
-            // Обновить счётчики
-            updateVoicesCounts();
-
-            // Отрисовать голоса
-            renderVoices();
-
-            // Выбрать первый голос по умолчанию
-            if (availableVoices.length > 0) {
-                selectVoice(availableVoices[0].voice_id);
-            }
-        } else {
-            // Показать ошибку
-            loadingState.style.display = 'none';
-            errorState.style.display = 'block';
-        }
-
-    } catch (error) {
-        console.error('Ошибка инициализации голосов:', error);
-        loadingState.style.display = 'none';
-        errorState.style.display = 'block';
+    const overlay = document.querySelector('#voice-selection-modal .modal-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', closeVoiceSelectionModal);
     }
 }
 
-async function loadVoices() {
+async function openVoiceSelectionModal() {
     /**
-     * Загрузить список голосов с бэкенда
+     * Открыть модальное окно выбора голоса
      */
 
+    const modal = document.getElementById('voice-selection-modal');
+    modal.style.display = 'flex';
+
+    // Если голоса ещё не загружены - загрузить
+    if (availableVoices.length === 0) {
+        await loadVoicesInModal();
+    } else {
+        // Показать контент
+        document.getElementById('voices-modal-loading').style.display = 'none';
+        document.getElementById('voices-modal-content').style.display = 'block';
+    }
+}
+
+function closeVoiceSelectionModal() {
+    /**
+     * Закрыть модальное окно
+     */
+
+    const modal = document.getElementById('voice-selection-modal');
+    modal.style.display = 'none';
+}
+
+async function loadVoicesInModal() {
+    /**
+     * Загрузить голоса в модальном окне
+     */
+
+    const loadingState = document.getElementById('voices-modal-loading');
+    const errorState = document.getElementById('voices-modal-error');
+    const content = document.getElementById('voices-modal-content');
+
     try {
-        addLog('info', '🎙️ Загрузка голосов ElevenLabs...');
+        loadingState.style.display = 'block';
+        errorState.style.display = 'none';
+        content.style.display = 'none';
+
+        addLog('info', '🎙️ Загрузка голосов...');
 
         const response = await fetch('http://localhost:5001/api/voices');
         const data = await response.json();
@@ -835,44 +842,47 @@ async function loadVoices() {
         if (data.success) {
             availableVoices = data.voices;
 
-            addLog('success', `✅ Загружено голосов: ${data.voices.length}`);
+            addLog('success', `✅ Загружено: ${data.voices.length} голосов`);
 
-            const maleCount = data.voices.filter(v => v.gender === 'male').length;
-            const femaleCount = data.voices.filter(v => v.gender === 'female').length;
+            // Обновить UI
+            loadingState.style.display = 'none';
+            content.style.display = 'block';
 
-            addLog('info', `   Мужских: ${maleCount}, Женских: ${femaleCount}`);
+            updateModalVoicesCounts();
+            renderModalVoices();
 
-            return true;
         } else {
-            addLog('error', '❌ Ошибка загрузки голосов');
-            return false;
+            loadingState.style.display = 'none';
+            errorState.style.display = 'block';
         }
+
     } catch (error) {
         addLog('error', `❌ ${error.message}`);
-        return false;
+        loadingState.style.display = 'none';
+        errorState.style.display = 'block';
     }
 }
 
-function updateVoicesCounts() {
+function updateModalVoicesCounts() {
     /**
-     * Обновить счётчики в фильтрах
+     * Обновить счётчики фильтров
      */
 
-    const totalCount = availableVoices.length;
-    const maleCount = availableVoices.filter(v => v.gender === 'male').length;
-    const femaleCount = availableVoices.filter(v => v.gender === 'female').length;
+    const total = availableVoices.length;
+    const male = availableVoices.filter(v => v.gender === 'male').length;
+    const female = availableVoices.filter(v => v.gender === 'female').length;
 
-    document.getElementById('count-all').textContent = totalCount;
-    document.getElementById('count-male').textContent = maleCount;
-    document.getElementById('count-female').textContent = femaleCount;
+    document.getElementById('modal-count-all').textContent = total;
+    document.getElementById('modal-count-male').textContent = male;
+    document.getElementById('modal-count-female').textContent = female;
 }
 
-function renderVoices(filter = 'all') {
+function renderModalVoices(filter = 'all') {
     /**
-     * Отрисовать карточки голосов
+     * Отрисовать голоса в модальном окне
      */
 
-    const grid = document.getElementById('voices-grid');
+    const grid = document.getElementById('voices-modal-grid');
     grid.innerHTML = '';
 
     // Фильтрация
@@ -885,12 +895,12 @@ function renderVoices(filter = 'all') {
 
     // Отрисовка
     filtered.forEach(voice => {
-        const card = createVoiceCard(voice);
+        const card = createModalVoiceCard(voice);
         grid.appendChild(card);
     });
 }
 
-function createVoiceCard(voice) {
+function createModalVoiceCard(voice) {
     /**
      * Создать карточку голоса
      */
@@ -903,11 +913,9 @@ function createVoiceCard(voice) {
         card.classList.add('selected');
     }
 
-    // Иконка гендера
     const genderIcon = voice.gender === 'male' ? '👨' :
                       voice.gender === 'female' ? '👩' : '👤';
 
-    // Лейблы
     const labels = voice.labels || {};
     const labelHTML = Object.entries(labels)
         .slice(0, 3)
@@ -925,71 +933,83 @@ function createVoiceCard(voice) {
         </div>
 
         <div class="voice-actions">
-            <button class="voice-play-btn" onclick="playVoicePreview('${voice.voice_id}')">
+            <button class="voice-play-btn" onclick="playModalVoicePreview(event, '${voice.voice_id}')">
                 ▶️ Прослушать
             </button>
         </div>
     `;
 
-    // Клик по карточке = выбор голоса
+    // Клик по карточке = выбор
     card.addEventListener('click', (e) => {
         if (!e.target.classList.contains('voice-play-btn')) {
-            selectVoice(voice.voice_id);
+            selectModalVoice(voice.voice_id);
         }
     });
 
     return card;
 }
 
-function selectVoice(voiceId) {
+function selectModalVoice(voiceId) {
     /**
-     * Выбрать голос
+     * Выбрать голос и закрыть модальное окно
      */
 
     selectedVoiceId = voiceId;
 
-    // Обновить UI
-    document.querySelectorAll('.voice-card').forEach(card => {
-        if (card.dataset.voiceId === voiceId) {
-            card.classList.add('selected');
-        } else {
-            card.classList.remove('selected');
-        }
-    });
-
     const voice = availableVoices.find(v => v.voice_id === voiceId);
+
     if (voice) {
-        addLog('info', `✅ Выбран голос: ${voice.name}`);
+        // Обновить отображение выбранного голоса
+        document.getElementById('selected-voice-name').textContent = voice.name;
+
+        const genderText = voice.gender === 'male' ? 'Мужской' :
+                          voice.gender === 'female' ? 'Женский' : 'Нейтральный';
+
+        const labels = voice.labels || {};
+        const accent = labels.accent || '';
+        const age = labels.age || '';
+
+        document.getElementById('selected-voice-meta').textContent =
+            `${genderText}${accent ? `, ${accent}` : ''}${age ? `, ${age}` : ''}`;
+
+        addLog('success', `✅ Выбран голос: ${voice.name}`);
+
+        // Закрыть модальное окно
+        closeVoiceSelectionModal();
     }
 }
 
-function playVoicePreview(voiceId) {
+function playModalVoicePreview(event, voiceId) {
     /**
-     * Воспроизвести preview голоса
+     * Воспроизвести preview (ТОЛЬКО если сгенерирован)
      */
+
+    event.stopPropagation(); // Не выбирать голос при клике на кнопку
 
     const audio = new Audio(`http://localhost:5001/api/voices/${voiceId}/preview`);
 
     audio.play().catch(error => {
-        console.error('Ошибка воспроизведения:', error);
-        addLog('error', '❌ Preview не найден. Сгенерируйте preview сначала.');
+        addLog('warning', '⚠️ Preview не найден. Сгенерируйте preview сначала.');
+        alert('Preview не найден!\n\nНажмите кнопку "Сгенерировать preview" внизу окна.');
     });
 
     const voice = availableVoices.find(v => v.voice_id === voiceId);
-    addLog('info', `▶️ ${voice ? voice.name : 'Голос'}`);
+    if (voice) {
+        addLog('info', `▶️ ${voice.name}`);
+    }
 }
 
-async function generateAllPreviews() {
+async function generateAllModalPreviews() {
     /**
      * Генерация preview для всех голосов
      */
 
-    const btn = document.getElementById('generate-previews-btn');
+    const btn = document.getElementById('generate-previews-modal-btn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Генерация...';
+    btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0 auto;"></div> Генерация...';
 
     try {
-        addLog('info', '🎙️ Генерация preview...');
+        addLog('info', '🎵 Генерация preview...');
         addLog('info', '⏳ Это займёт несколько минут...');
 
         const response = await fetch('http://localhost:5001/api/voices/generate-previews', {
@@ -999,18 +1019,24 @@ async function generateAllPreviews() {
         const data = await response.json();
 
         if (data.success) {
+            previewsGenerated = true;
+
             addLog('success', `✅ Preview готовы!`);
-            addLog('success', `   Успешно: ${data.stats.successful}/${data.stats.total}`);
+            addLog('success', `   ${data.stats.successful}/${data.stats.total} успешно`);
 
             if (data.stats.failed > 0) {
                 addLog('warning', `   ⚠️ Ошибки: ${data.stats.failed}`);
             }
+
+            alert(`Готово!\n\n${data.stats.successful}/${data.stats.total} preview сгенерированы`);
         } else {
             addLog('error', '❌ Ошибка генерации');
+            alert('Ошибка генерации preview');
         }
 
     } catch (error) {
         addLog('error', `❌ ${error.message}`);
+        alert(`Ошибка: ${error.message}`);
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<span class="btn-icon">🎵</span><span class="btn-text">Сгенерировать preview</span>';
@@ -1051,27 +1077,27 @@ window.addEventListener('DOMContentLoaded', () => {
     // Инициализация голосов
     initVoicesSection();
 
-    // Фильтры голосов
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    // Фильтры в модальном окне
+    document.querySelectorAll('#voice-selection-modal .filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#voice-selection-modal .filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
             const filter = btn.dataset.filter;
-            renderVoices(filter);
+            renderModalVoices(filter);
         });
     });
 
     // Кнопка генерации preview
-    const generatePreviewsBtn = document.getElementById('generate-previews-btn');
-    if (generatePreviewsBtn) {
-        generatePreviewsBtn.addEventListener('click', generateAllPreviews);
+    const genBtn = document.getElementById('generate-previews-modal-btn');
+    if (genBtn) {
+        genBtn.addEventListener('click', generateAllModalPreviews);
     }
 
-    // Кнопка повтора загрузки голосов
-    const retryBtn = document.getElementById('retry-voices-btn');
+    // Кнопка повтора
+    const retryBtn = document.getElementById('retry-voices-modal-btn');
     if (retryBtn) {
-        retryBtn.addEventListener('click', initVoicesSection);
+        retryBtn.addEventListener('click', loadVoicesInModal);
     }
 
     // Welcome log
