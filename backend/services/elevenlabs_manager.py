@@ -255,6 +255,102 @@ class ElevenLabsManager:
             'total_chars_available': active * 10000
         }
 
+    def generate_voice_previews(self, voices: List[Dict], test_text: str = None) -> Dict[str, bool]:
+        """
+        Генерация preview аудио для всех голосов
+
+        Args:
+            voices: список голосов из get_voices()
+            test_text: тестовый текст (по умолчанию стандартный)
+
+        Returns:
+            {voice_id: success_status}
+        """
+        if test_text is None:
+            test_text = "Это тестовый пример голоса для автоматической генерации видео."
+
+        # Папка для preview
+        preview_dir = os.path.join(
+            os.path.dirname(__file__),
+            '..',
+            'voices_preview'
+        )
+        os.makedirs(preview_dir, exist_ok=True)
+
+        print(f"\n🎙️ Генерация preview для {len(voices)} голосов...")
+        print(f"📝 Текст: '{test_text}'\n")
+
+        results = {}
+        successful = 0
+        failed = 0
+
+        for i, voice in enumerate(voices, 1):
+            voice_id = voice['voice_id']
+            voice_name = voice['name']
+
+            print(f"[{i}/{len(voices)}] {voice_name}...", end=' ')
+
+            # Путь сохранения
+            output_path = os.path.join(preview_dir, f"{voice_id}.mp3")
+
+            # Проверить существование
+            if os.path.exists(output_path):
+                print("✅ (кэш)")
+                results[voice_id] = True
+                successful += 1
+                continue
+
+            # Генерация
+            success = self.generate_audio(
+                text=test_text,
+                voice_id=voice_id,
+                output_path=output_path
+            )
+
+            if success:
+                print("✅")
+                results[voice_id] = True
+                successful += 1
+            else:
+                print("❌")
+                results[voice_id] = False
+                failed += 1
+
+                # Отметить голос как недоступный
+                voice['status'] = 'unavailable'
+
+            # Пауза между запросами
+            time.sleep(0.5)
+
+        print(f"\n📊 Статистика preview:")
+        print(f"   ✅ Успешно: {successful}/{len(voices)}")
+        print(f"   ❌ Ошибки: {failed}/{len(voices)}")
+
+        return results
+
+    def get_voice_preview_path(self, voice_id: str) -> Optional[str]:
+        """
+        Получить путь к preview файлу голоса
+
+        Args:
+            voice_id: ID голоса
+
+        Returns:
+            Абсолютный путь к MP3 или None
+        """
+        preview_dir = os.path.join(
+            os.path.dirname(__file__),
+            '..',
+            'voices_preview'
+        )
+
+        preview_path = os.path.join(preview_dir, f"{voice_id}.mp3")
+
+        if os.path.exists(preview_path):
+            return os.path.abspath(preview_path)
+
+        return None
+
 
 # === ГЛОБАЛЬНЫЙ ИНСТАНС ===
 

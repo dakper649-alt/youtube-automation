@@ -3,7 +3,7 @@ Flask API для Electron приложения
 Полная версия с MainOrchestrator для реальной генерации видео
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import time
 import uuid
@@ -1038,6 +1038,80 @@ def get_voices():
 
     except Exception as e:
         print(f"❌ Error in get_voices: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/voices/generate-previews', methods=['POST'])
+def generate_voice_previews():
+    """Генерировать preview аудио для всех голосов"""
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.elevenlabs_manager import get_elevenlabs_manager
+
+        manager = get_elevenlabs_manager()
+
+        # Получить список голосов
+        voices = manager.get_voices()
+
+        # Получить текст из запроса (опционально)
+        data = request.get_json() or {}
+        test_text = data.get('test_text', None)
+
+        # Генерация preview
+        print(f"🎙️ Начинаем генерацию preview для {len(voices)} голосов...")
+        results = manager.generate_voice_previews(voices, test_text)
+
+        successful = sum(1 for success in results.values() if success)
+        failed = sum(1 for success in results.values() if not success)
+
+        return jsonify({
+            'success': True,
+            'results': results,
+            'stats': {
+                'total': len(voices),
+                'successful': successful,
+                'failed': failed
+            }
+        })
+
+    except Exception as e:
+        print(f"❌ Error in generate_voice_previews: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/voices/<voice_id>/preview', methods=['GET'])
+def get_voice_preview(voice_id):
+    """Получить preview аудио файл для голоса"""
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.elevenlabs_manager import get_elevenlabs_manager
+
+        manager = get_elevenlabs_manager()
+        preview_path = manager.get_voice_preview_path(voice_id)
+
+        if preview_path and os.path.exists(preview_path):
+            return send_file(
+                preview_path,
+                mimetype='audio/mpeg',
+                as_attachment=False,
+                download_name=f'{voice_id}.mp3'
+            )
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Preview not found for voice {voice_id}'
+            }), 404
+
+    except Exception as e:
+        print(f"❌ Error in get_voice_preview: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({

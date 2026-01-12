@@ -763,6 +763,141 @@ function initProjectInfo() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ELEVENLABS VOICES
+// ═══════════════════════════════════════════════════════════════
+
+let availableVoices = [];
+let currentAudio = null;
+
+async function loadVoices() {
+    /**
+     * Загрузить список голосов ElevenLabs
+     */
+    try {
+        addLog('info', 'Загрузка голосов ElevenLabs...');
+
+        const response = await fetch('http://localhost:5001/api/voices', {
+            method: 'GET'
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            availableVoices = data.voices;
+
+            addLog('success', `✅ Загружено голосов: ${availableVoices.length}`);
+
+            if (data.stats) {
+                const stats = data.stats;
+                console.log('📊 ElevenLabs статистика:', stats);
+                addLog('info', `Активных ключей: ${stats.active_keys}/${stats.total_keys}`);
+            }
+        } else {
+            throw new Error(data.error || 'Unknown error');
+        }
+
+    } catch (error) {
+        console.error('❌ Ошибка загрузки голосов:', error);
+        addLog('error', `Ошибка загрузки голосов: ${error.message}`);
+    }
+}
+
+async function generateVoicePreviews(testText = null) {
+    /**
+     * Генерация preview аудио для всех голосов
+     *
+     * @param {string} testText - опциональный тестовый текст
+     */
+    try {
+        addLog('info', '🎙️ Генерация preview голосов...');
+
+        const response = await fetch('http://localhost:5001/api/voices/generate-previews', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                test_text: testText
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            const stats = data.stats;
+            addLog('success', `✅ Preview сгенерированы: ${stats.successful}/${stats.total}`);
+
+            if (stats.failed > 0) {
+                addLog('warning', `⚠️ Ошибок: ${stats.failed}`);
+            }
+
+            return data.results;
+        } else {
+            throw new Error(data.error || 'Unknown error');
+        }
+
+    } catch (error) {
+        console.error('❌ Ошибка генерации preview:', error);
+        addLog('error', `Ошибка генерации preview: ${error.message}`);
+        return null;
+    }
+}
+
+async function playVoicePreview(voiceId) {
+    /**
+     * Воспроизвести preview голоса
+     *
+     * @param {string} voiceId - ID голоса
+     */
+    try {
+        // Остановить текущее воспроизведение
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+        }
+
+        // Создать новый Audio элемент
+        const previewUrl = `http://localhost:5001/api/voices/${voiceId}/preview`;
+        currentAudio = new Audio(previewUrl);
+
+        // Обработчики событий
+        currentAudio.addEventListener('loadstart', () => {
+            console.log(`▶️ Загрузка preview: ${voiceId}`);
+        });
+
+        currentAudio.addEventListener('canplay', () => {
+            console.log(`✅ Preview готов к воспроизведению`);
+        });
+
+        currentAudio.addEventListener('error', (e) => {
+            console.error('❌ Ошибка воспроизведения:', e);
+            addLog('error', `Ошибка воспроизведения preview для ${voiceId}`);
+        });
+
+        currentAudio.addEventListener('ended', () => {
+            console.log('⏹️ Воспроизведение завершено');
+            currentAudio = null;
+        });
+
+        // Начать воспроизведение
+        await currentAudio.play();
+        console.log(`🔊 Воспроизведение preview: ${voiceId}`);
+
+    } catch (error) {
+        console.error('❌ Ошибка воспроизведения:', error);
+        addLog('error', `Не удалось воспроизвести preview: ${error.message}`);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // INITIALIZATION
 // ═══════════════════════════════════════════════════════════════
 
@@ -799,6 +934,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Check backend health
     checkBackendHealth();
+
+    // Load ElevenLabs voices
+    loadVoices();
 });
 
 async function checkBackendHealth() {
