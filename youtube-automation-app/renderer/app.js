@@ -1013,7 +1013,11 @@ async function generateAllModalPreviews() {
         addLog('info', '⏳ Это займёт несколько минут...');
 
         const response = await fetch('http://localhost:5001/api/voices/generate-previews', {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
         });
 
         const data = await response.json();

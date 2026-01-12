@@ -278,7 +278,8 @@ class ElevenLabsManager:
         os.makedirs(preview_dir, exist_ok=True)
 
         print(f"\n🎙️ Генерация preview для {len(voices)} голосов...")
-        print(f"📝 Текст: '{test_text}'\n")
+        print(f"📝 Текст: '{test_text}'")
+        print(f"📁 Папка: {os.path.abspath(preview_dir)}\n")
 
         results = {}
         successful = 0
@@ -288,12 +289,12 @@ class ElevenLabsManager:
             voice_id = voice['voice_id']
             voice_name = voice['name']
 
-            print(f"[{i}/{len(voices)}] {voice_name}...", end=' ')
+            print(f"[{i}/{len(voices)}] {voice_name}...", end=' ', flush=True)
 
             # Путь сохранения
             output_path = os.path.join(preview_dir, f"{voice_id}.mp3")
 
-            # Проверить существование
+            # Проверить кэш
             if os.path.exists(output_path):
                 print("✅ (кэш)")
                 results[voice_id] = True
@@ -301,26 +302,31 @@ class ElevenLabsManager:
                 continue
 
             # Генерация
-            success = self.generate_audio(
-                text=test_text,
-                voice_id=voice_id,
-                output_path=output_path
-            )
+            try:
+                success = self.generate_audio(
+                    text=test_text,
+                    voice_id=voice_id,
+                    output_path=output_path
+                )
 
-            if success:
-                print("✅")
-                results[voice_id] = True
-                successful += 1
-            else:
-                print("❌")
+                if success:
+                    print("✅")
+                    results[voice_id] = True
+                    successful += 1
+                else:
+                    print("❌")
+                    results[voice_id] = False
+                    failed += 1
+                    voice['status'] = 'unavailable'
+
+            except Exception as e:
+                print(f"❌ {str(e)}")
                 results[voice_id] = False
                 failed += 1
-
-                # Отметить голос как недоступный
                 voice['status'] = 'unavailable'
 
-            # Пауза между запросами
-            time.sleep(0.5)
+            # Пауза между запросами (важно для прокси!)
+            time.sleep(1.0)
 
         print(f"\n📊 Статистика preview:")
         print(f"   ✅ Успешно: {successful}/{len(voices)}")
