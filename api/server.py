@@ -1017,6 +1017,35 @@ def generate_images():
         }), 500
 
 # ═══════════════════════════════════════════════════════════════
+# ELEVENLABS VOICES
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/voices', methods=['GET'])
+def get_voices():
+    """Получить список голосов ElevenLabs"""
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
+        from services.elevenlabs_manager import get_elevenlabs_manager
+
+        manager = get_elevenlabs_manager()
+        voices = manager.get_voices()
+
+        return jsonify({
+            'success': True,
+            'voices': voices,
+            'stats': manager.get_usage_stats()
+        })
+
+    except Exception as e:
+        print(f"❌ Error in get_voices: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# ═══════════════════════════════════════════════════════════════
 
 if __name__ == '__main__':
     print("\n" + "=" * 80)

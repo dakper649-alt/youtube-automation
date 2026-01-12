@@ -1,0 +1,12 @@
+# ElevenLabs API Keys Pool (540 keys)
+# ВАЖНО: Замените эти placeholder ключи на реальные API ключи
+# Формат: sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (один ключ на строку)
+
+# Пример реальных ключей (замените на ваши):
+sk_8b150645dd9b65185fee5fb94acc297631d3efe3e07dc0aa
+sk_8ddf5da99acc6d0ab0832e3f70680ec5244d3b1f02f4fc89
+
+# TODO: Добавьте остальные 538 ключей ниже
+# sk_...
+# sk_...
+# (всего должно быть 540 ключей)
