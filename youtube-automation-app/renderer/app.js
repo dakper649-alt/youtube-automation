@@ -767,133 +767,253 @@ function initProjectInfo() {
 // ═══════════════════════════════════════════════════════════════
 
 let availableVoices = [];
-let currentAudio = null;
+let selectedVoiceId = null;
+let currentFilter = 'all';
+
+async function initVoicesSection() {
+    /**
+     * Инициализация раздела озвучки
+     */
+
+    const loadingState = document.getElementById('voices-loading');
+    const errorState = document.getElementById('voices-error');
+    const filtersSection = document.getElementById('voices-filters');
+    const listSection = document.getElementById('voices-list');
+    const previewSection = document.getElementById('voices-preview-section');
+
+    try {
+        // Показать загрузку
+        loadingState.style.display = 'block';
+        errorState.style.display = 'none';
+
+        // Загрузить голоса
+        const success = await loadVoices();
+
+        if (success && availableVoices.length > 0) {
+            // Скрыть загрузку
+            loadingState.style.display = 'none';
+
+            // Показать интерфейс
+            filtersSection.style.display = 'block';
+            listSection.style.display = 'block';
+            previewSection.style.display = 'block';
+
+            // Обновить счётчики
+            updateVoicesCounts();
+
+            // Отрисовать голоса
+            renderVoices();
+
+            // Выбрать первый голос по умолчанию
+            if (availableVoices.length > 0) {
+                selectVoice(availableVoices[0].voice_id);
+            }
+        } else {
+            // Показать ошибку
+            loadingState.style.display = 'none';
+            errorState.style.display = 'block';
+        }
+
+    } catch (error) {
+        console.error('Ошибка инициализации голосов:', error);
+        loadingState.style.display = 'none';
+        errorState.style.display = 'block';
+    }
+}
 
 async function loadVoices() {
     /**
-     * Загрузить список голосов ElevenLabs
+     * Загрузить список голосов с бэкенда
      */
+
     try {
-        addLog('info', 'Загрузка голосов ElevenLabs...');
+        addLog('info', '🎙️ Загрузка голосов ElevenLabs...');
 
-        const response = await fetch('http://localhost:5001/api/voices', {
-            method: 'GET'
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
+        const response = await fetch('http://localhost:5001/api/voices');
         const data = await response.json();
 
         if (data.success) {
             availableVoices = data.voices;
 
-            addLog('success', `✅ Загружено голосов: ${availableVoices.length}`);
+            addLog('success', `✅ Загружено голосов: ${data.voices.length}`);
 
-            if (data.stats) {
-                const stats = data.stats;
-                console.log('📊 ElevenLabs статистика:', stats);
-                addLog('info', `Активных ключей: ${stats.active_keys}/${stats.total_keys}`);
-            }
+            const maleCount = data.voices.filter(v => v.gender === 'male').length;
+            const femaleCount = data.voices.filter(v => v.gender === 'female').length;
+
+            addLog('info', `   Мужских: ${maleCount}, Женских: ${femaleCount}`);
+
+            return true;
         } else {
-            throw new Error(data.error || 'Unknown error');
+            addLog('error', '❌ Ошибка загрузки голосов');
+            return false;
         }
-
     } catch (error) {
-        console.error('❌ Ошибка загрузки голосов:', error);
-        addLog('error', `Ошибка загрузки голосов: ${error.message}`);
+        addLog('error', `❌ ${error.message}`);
+        return false;
     }
 }
 
-async function generateVoicePreviews(testText = null) {
+function updateVoicesCounts() {
     /**
-     * Генерация preview аудио для всех голосов
-     *
-     * @param {string} testText - опциональный тестовый текст
+     * Обновить счётчики в фильтрах
      */
+
+    const totalCount = availableVoices.length;
+    const maleCount = availableVoices.filter(v => v.gender === 'male').length;
+    const femaleCount = availableVoices.filter(v => v.gender === 'female').length;
+
+    document.getElementById('count-all').textContent = totalCount;
+    document.getElementById('count-male').textContent = maleCount;
+    document.getElementById('count-female').textContent = femaleCount;
+}
+
+function renderVoices(filter = 'all') {
+    /**
+     * Отрисовать карточки голосов
+     */
+
+    const grid = document.getElementById('voices-grid');
+    grid.innerHTML = '';
+
+    // Фильтрация
+    let filtered = availableVoices;
+    if (filter === 'male') {
+        filtered = availableVoices.filter(v => v.gender === 'male');
+    } else if (filter === 'female') {
+        filtered = availableVoices.filter(v => v.gender === 'female');
+    }
+
+    // Отрисовка
+    filtered.forEach(voice => {
+        const card = createVoiceCard(voice);
+        grid.appendChild(card);
+    });
+}
+
+function createVoiceCard(voice) {
+    /**
+     * Создать карточку голоса
+     */
+
+    const card = document.createElement('div');
+    card.className = 'voice-card';
+    card.dataset.voiceId = voice.voice_id;
+
+    if (voice.voice_id === selectedVoiceId) {
+        card.classList.add('selected');
+    }
+
+    // Иконка гендера
+    const genderIcon = voice.gender === 'male' ? '👨' :
+                      voice.gender === 'female' ? '👩' : '👤';
+
+    // Лейблы
+    const labels = voice.labels || {};
+    const labelHTML = Object.entries(labels)
+        .slice(0, 3)
+        .map(([key, val]) => `<span class="voice-label">${val}</span>`)
+        .join('');
+
+    card.innerHTML = `
+        <div class="voice-card-header">
+            <h4 class="voice-name">${voice.name}</h4>
+            <span class="voice-gender">${genderIcon}</span>
+        </div>
+
+        <div class="voice-labels">
+            ${labelHTML}
+        </div>
+
+        <div class="voice-actions">
+            <button class="voice-play-btn" onclick="playVoicePreview('${voice.voice_id}')">
+                ▶️ Прослушать
+            </button>
+        </div>
+    `;
+
+    // Клик по карточке = выбор голоса
+    card.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('voice-play-btn')) {
+            selectVoice(voice.voice_id);
+        }
+    });
+
+    return card;
+}
+
+function selectVoice(voiceId) {
+    /**
+     * Выбрать голос
+     */
+
+    selectedVoiceId = voiceId;
+
+    // Обновить UI
+    document.querySelectorAll('.voice-card').forEach(card => {
+        if (card.dataset.voiceId === voiceId) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+
+    const voice = availableVoices.find(v => v.voice_id === voiceId);
+    if (voice) {
+        addLog('info', `✅ Выбран голос: ${voice.name}`);
+    }
+}
+
+function playVoicePreview(voiceId) {
+    /**
+     * Воспроизвести preview голоса
+     */
+
+    const audio = new Audio(`http://localhost:5001/api/voices/${voiceId}/preview`);
+
+    audio.play().catch(error => {
+        console.error('Ошибка воспроизведения:', error);
+        addLog('error', '❌ Preview не найден. Сгенерируйте preview сначала.');
+    });
+
+    const voice = availableVoices.find(v => v.voice_id === voiceId);
+    addLog('info', `▶️ ${voice ? voice.name : 'Голос'}`);
+}
+
+async function generateAllPreviews() {
+    /**
+     * Генерация preview для всех голосов
+     */
+
+    const btn = document.getElementById('generate-previews-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Генерация...';
+
     try {
-        addLog('info', '🎙️ Генерация preview голосов...');
+        addLog('info', '🎙️ Генерация preview...');
+        addLog('info', '⏳ Это займёт несколько минут...');
 
         const response = await fetch('http://localhost:5001/api/voices/generate-previews', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                test_text: testText
-            })
+            method: 'POST'
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
 
         const data = await response.json();
 
         if (data.success) {
-            const stats = data.stats;
-            addLog('success', `✅ Preview сгенерированы: ${stats.successful}/${stats.total}`);
+            addLog('success', `✅ Preview готовы!`);
+            addLog('success', `   Успешно: ${data.stats.successful}/${data.stats.total}`);
 
-            if (stats.failed > 0) {
-                addLog('warning', `⚠️ Ошибок: ${stats.failed}`);
+            if (data.stats.failed > 0) {
+                addLog('warning', `   ⚠️ Ошибки: ${data.stats.failed}`);
             }
-
-            return data.results;
         } else {
-            throw new Error(data.error || 'Unknown error');
+            addLog('error', '❌ Ошибка генерации');
         }
 
     } catch (error) {
-        console.error('❌ Ошибка генерации preview:', error);
-        addLog('error', `Ошибка генерации preview: ${error.message}`);
-        return null;
-    }
-}
-
-async function playVoicePreview(voiceId) {
-    /**
-     * Воспроизвести preview голоса
-     *
-     * @param {string} voiceId - ID голоса
-     */
-    try {
-        // Остановить текущее воспроизведение
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio = null;
-        }
-
-        // Создать новый Audio элемент
-        const previewUrl = `http://localhost:5001/api/voices/${voiceId}/preview`;
-        currentAudio = new Audio(previewUrl);
-
-        // Обработчики событий
-        currentAudio.addEventListener('loadstart', () => {
-            console.log(`▶️ Загрузка preview: ${voiceId}`);
-        });
-
-        currentAudio.addEventListener('canplay', () => {
-            console.log(`✅ Preview готов к воспроизведению`);
-        });
-
-        currentAudio.addEventListener('error', (e) => {
-            console.error('❌ Ошибка воспроизведения:', e);
-            addLog('error', `Ошибка воспроизведения preview для ${voiceId}`);
-        });
-
-        currentAudio.addEventListener('ended', () => {
-            console.log('⏹️ Воспроизведение завершено');
-            currentAudio = null;
-        });
-
-        // Начать воспроизведение
-        await currentAudio.play();
-        console.log(`🔊 Воспроизведение preview: ${voiceId}`);
-
-    } catch (error) {
-        console.error('❌ Ошибка воспроизведения:', error);
-        addLog('error', `Не удалось воспроизвести preview: ${error.message}`);
+        addLog('error', `❌ ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">🎵</span><span class="btn-text">Сгенерировать preview</span>';
     }
 }
 
@@ -928,15 +1048,38 @@ window.addEventListener('DOMContentLoaded', () => {
         modalOverlay.addEventListener('click', closeScenesModal);
     }
 
+    // Инициализация голосов
+    initVoicesSection();
+
+    // Фильтры голосов
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const filter = btn.dataset.filter;
+            renderVoices(filter);
+        });
+    });
+
+    // Кнопка генерации preview
+    const generatePreviewsBtn = document.getElementById('generate-previews-btn');
+    if (generatePreviewsBtn) {
+        generatePreviewsBtn.addEventListener('click', generateAllPreviews);
+    }
+
+    // Кнопка повтора загрузки голосов
+    const retryBtn = document.getElementById('retry-voices-btn');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', initVoicesSection);
+    }
+
     // Welcome log
     addLog('success', 'YouTube Automation Studio запущен');
     addLog('info', 'Готов к работе. Начните с создания сценария.');
 
     // Check backend health
     checkBackendHealth();
-
-    // Load ElevenLabs voices
-    loadVoices();
 });
 
 async function checkBackendHealth() {

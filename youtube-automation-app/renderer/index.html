@@ -293,6 +293,69 @@
                         </div>
                     </div>
 
+                    <!-- 1.3 ОЗВУЧКА -->
+                    <div id="voice-block" class="content-block">
+                        <div class="block-header">
+                            <h2 class="block-title">🎙️ Озвучка</h2>
+                            <p class="block-description">
+                                Выберите голос для озвучки видео. Доступно 20+ профессиональных голосов ElevenLabs.
+                            </p>
+                        </div>
+
+                        <div class="block-content">
+
+                            <!-- Статус загрузки -->
+                            <div id="voices-loading" class="loading-state">
+                                <div class="spinner"></div>
+                                <p>Загрузка голосов...</p>
+                            </div>
+
+                            <!-- Ошибка загрузки -->
+                            <div id="voices-error" class="error-state" style="display: none;">
+                                <p>❌ Ошибка загрузки голосов</p>
+                                <button class="btn-secondary" id="retry-voices-btn">Повторить</button>
+                            </div>
+
+                            <!-- Фильтры -->
+                            <div id="voices-filters" class="subsection" style="display: none;">
+                                <h3 class="subsection-title">🎚️ Фильтры</h3>
+
+                                <div class="filter-buttons">
+                                    <button class="filter-btn active" data-filter="all">
+                                        Все (<span id="count-all">0</span>)
+                                    </button>
+                                    <button class="filter-btn" data-filter="male">
+                                        Мужские (<span id="count-male">0</span>)
+                                    </button>
+                                    <button class="filter-btn" data-filter="female">
+                                        Женские (<span id="count-female">0</span>)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Список голосов -->
+                            <div id="voices-list" class="subsection" style="display: none;">
+                                <h3 class="subsection-title">🎤 Доступные голоса</h3>
+
+                                <div id="voices-grid" class="voices-grid">
+                                    <!-- Голоса добавляются динамически через JS -->
+                                </div>
+                            </div>
+
+                            <!-- Кнопка генерации preview -->
+                            <div id="voices-preview-section" class="subsection" style="display: none;">
+                                <button class="btn-secondary" id="generate-previews-btn">
+                                    <span class="btn-icon">🎵</span>
+                                    <span class="btn-text">Сгенерировать preview для всех голосов</span>
+                                </button>
+                                <p class="hint-text">
+                                    Preview позволяют прослушать голоса перед использованием (генерация займёт несколько минут)
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+
                     <div class="gen-block upcoming-block">
                         <div class="block-header">
                             <h2>🎬 Анимация изображений</h2>
